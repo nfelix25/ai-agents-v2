@@ -23,5 +23,3 @@ export async function runAgent(
 
   console.log(text);
 }
-
-runAgent('What is the meaning of life?');
