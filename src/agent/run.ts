@@ -1,14 +1,18 @@
-import 'dotenv/config';
 import { generateText, type ModelMessage } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { getTracer, Laminar } from '@lmnr-ai/lmnr';
 
-import { tools } from './tools';
-import { SYSTEM_PROMPT } from './system/prompt';
+import { tools } from './tools/index.ts';
+import { SYSTEM_PROMPT } from './system/prompt.ts';
 
-import type { AgentCallbacks } from '../types';
-import { executeTool } from './executetool';
+import type { AgentCallbacks } from '../types.ts';
+import { executeTool } from './executeTool.ts';
 
 const MODEL_NAME = 'gpt-5-mini';
+
+Laminar.initialize({
+  projectApiKey: process.env.LMNR_PROJECT_API_KEY,
+});
 
 export async function runAgent(
   userMessage: string,
@@ -21,6 +25,10 @@ export async function runAgent(
     prompt: userMessage,
     system: SYSTEM_PROMPT,
     tools,
+    experimental_telemetry: {
+      isEnabled: true,
+      tracer: getTracer(),
+    },
   });
 
   console.log(text, toolCalls);
@@ -29,5 +37,3 @@ export async function runAgent(
     console.log(await executeTool(toolCall.toolName, toolCall.input));
   });
 }
-
-runAgent('What is the current date and time?');
