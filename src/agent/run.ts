@@ -1,12 +1,15 @@
-import { generateText, type ModelMessage } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { generateText, type ModelMessage } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { getTracer, Laminar } from '@lmnr-ai/lmnr';
 
-import { tools } from "./tools/index.ts";
-import { SYSTEM_PROMPT } from "./system/prompt.ts";
+import { tools } from './tools/index.ts';
+import { SYSTEM_PROMPT } from './system/prompt.ts';
 
-import type { AgentCallbacks } from "../types.ts";
+import type { AgentCallbacks } from '../types.ts';
 
-const MODEL_NAME = "gpt-5-mini";
+const MODEL_NAME = 'gpt-5-mini';
+
+Laminar.initialize({ projectApiKey: process.env.LMNR_PROJECT_API_KEY });
 
 export async function runAgent(
   userMessage: string,
@@ -19,6 +22,10 @@ export async function runAgent(
     prompt: userMessage,
     system: SYSTEM_PROMPT,
     tools,
+    experimental_telemetry: {
+      isEnabled: true,
+      tracer: getTracer(),
+    },
   });
 
   console.log(text);
