@@ -2,6 +2,8 @@ import { generateText, stepCountIs, tool, type Tool, type ToolSet } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
+import { buildMessages } from './utils.ts';
+
 import type {
   EvalData,
   SingleTurnResult,
@@ -11,7 +13,7 @@ import type {
 
 const TOOL_DEFINITIONS: Record<
   string,
-  { description: Tool['description']; parameters: Record<string, any> }
+  { description: Tool['description']; parameters: Tool['inputSchema'] }
 > = {
   readFile: {
     description: 'Read the contents of a file at the specified path',
@@ -48,4 +50,38 @@ const TOOL_DEFINITIONS: Record<
       command: z.string().describe('the shell command to execute'),
     }),
   },
+};
+
+export const singleTurnExecutor = async (data: EvalData) => {
+  const messages = buildMessages(data);
+
+  const tools: ToolSet = {};
+  for (const toolName of data.tools) {
+    const def = TOOL_DEFINITIONS[toolName];
+
+    if (def) {
+      tools[toolName] = tool({
+        description: def.description,
+        inputSchema: def.parameters,
+      });
+    }
+  }
+
+  const { toolCalls } = await generateText({
+    model: data.config?.model ?? 'gpt-5-mini',
+    messages,
+    tools,
+    stopWhen: stepCountIs(1),
+    // Temperature not valid for reasoning models, but omitted when stringified if undefined
+    temperature: data.config?.temperature,
+  });
+
+  const calls = toolCalls.map((tc) => ({
+    toolName: tc.toolName,
+    args: 'args' in tc ? tc.args : {},
+  }));
+
+  const toolNames = toolCalls.map((tc) => tc.toolName);
+
+  return { toolCalls, toolNames, selectedAny: toolNames.length > 0 };
 };
