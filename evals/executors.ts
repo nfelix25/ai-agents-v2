@@ -71,7 +71,7 @@ export const singleTurnWithMocks = async (
   }
 
   const result = await generateText({
-    model: data.config?.model ?? 'gpt-5-mini',
+    model: openai(data.config?.model ?? 'gpt-5-mini'),
     messages,
     tools,
     stopWhen: stepCountIs(1),
