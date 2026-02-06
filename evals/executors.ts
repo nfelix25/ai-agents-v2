@@ -52,9 +52,12 @@ const TOOL_DEFINITIONS: Record<
   },
 };
 
-export const singleTurnExecutor = async (data: EvalData) => {
+export const singleTurnWithMocks = async (
+  data: EvalData,
+): Promise<SingleTurnResult> => {
   const messages = buildMessages(data);
 
+  // Build mocked tools from definitions based on data.tools
   const tools: ToolSet = {};
   for (const toolName of data.tools) {
     const def = TOOL_DEFINITIONS[toolName];
@@ -67,7 +70,7 @@ export const singleTurnExecutor = async (data: EvalData) => {
     }
   }
 
-  const { toolCalls } = await generateText({
+  const result = await generateText({
     model: data.config?.model ?? 'gpt-5-mini',
     messages,
     tools,
@@ -76,7 +79,7 @@ export const singleTurnExecutor = async (data: EvalData) => {
     temperature: data.config?.temperature,
   });
 
-  const calls = toolCalls.map((tc) => ({
+  const toolCalls = (result.toolCalls ?? []).map((tc) => ({
     toolName: tc.toolName,
     args: 'args' in tc ? tc.args : {},
   }));
@@ -85,3 +88,8 @@ export const singleTurnExecutor = async (data: EvalData) => {
 
   return { toolCalls, toolNames, selectedAny: toolNames.length > 0 };
 };
+
+/**
+ * Multi-turn executor with mocked tools.
+ * Runs a complete agent loop with tools returning fixed values.
+ */
