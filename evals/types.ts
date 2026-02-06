@@ -1,4 +1,4 @@
-import type { ModelMessage } from "ai";
+import type { ModelMessage } from 'ai';
 
 /**
  * Input data for single-turn tool selection evaluations.
@@ -27,7 +27,7 @@ export interface EvalTarget {
   /** Tools that MUST NOT be selected (negative prompts) */
   forbiddenTools?: string[];
   /** Category for grouping and filtering */
-  category: "golden" | "secondary" | "negative";
+  category: 'golden' | 'secondary' | 'negative';
 }
 
 /**
@@ -35,7 +35,7 @@ export interface EvalTarget {
  */
 export interface SingleTurnResult {
   /** Raw tool calls from the LLM */
-  toolCalls: Array<{ toolName: string; args: unknown }>;
+  toolCalls: Array<{ toolName: string; input: unknown }>;
   /** Just the tool names for easy comparison */
   toolNames: string[];
   /** Whether any tool was selected */
@@ -86,7 +86,7 @@ export interface MultiTurnTarget {
   /** Mock tool results for LLM judge context */
   mockToolResults: Record<string, string>;
   /** Category for grouping */
-  category: "task-completion" | "conversation-continuation" | "negative";
+  category: 'task-completion' | 'conversation-continuation' | 'negative';
 }
 
 /**

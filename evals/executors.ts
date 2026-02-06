@@ -81,7 +81,7 @@ export const singleTurnWithMocks = async (
 
   const toolCalls = (result.toolCalls ?? []).map((tc) => ({
     toolName: tc.toolName,
-    args: 'args' in tc ? tc.args : {},
+    input: 'input' in tc ? tc.input : {},
   }));
 
   const toolNames = toolCalls.map((tc) => tc.toolName);
