@@ -7,6 +7,7 @@ import { SYSTEM_PROMPT } from './system/prompt.ts';
 import { filterCompatibleMessages } from './system/filterMessages.ts';
 
 import type { AgentCallbacks, ToolCallInfo } from '../types.ts';
+import { executeTool } from './executeTool.ts';
 
 const MODEL_NAME = 'gpt-5-mini';
 
@@ -98,6 +99,10 @@ export async function runAgent(
     messages.push(...responseMessages.messages);
 
     for (const tc of toolCalls) {
+      const result = await executeTool(tc.toolName, tc.args);
+
+      callbacks.onToolCallEnd(tc.toolName, result);
+
       messages.push({
         role: 'tool',
         content: [
