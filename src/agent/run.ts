@@ -43,7 +43,7 @@ export async function runAgent(
       //   },
       // },
     });
-    console.log(result);
+
     const toolCalls: ToolCallInfo[] = [];
     let currentText = '';
     let streamError: Error | null = null;
