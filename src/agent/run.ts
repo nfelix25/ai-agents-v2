@@ -8,6 +8,7 @@ import { filterCompatibleMessages } from './system/filterMessages.ts';
 
 import type { AgentCallbacks, ToolCallInfo } from '../types.ts';
 import { executeTool } from './executeTool.ts';
+import { open } from 'fs';
 
 const MODEL_NAME = 'gpt-5-mini';
 
@@ -36,8 +37,13 @@ export async function runAgent(
       messages,
       tools,
       experimental_telemetry: { isEnabled: true, tracer: getTracer() },
+      // providerOptions: {
+      //   openai: {
+      //     reasoningSummary: 'detailed',
+      //   },
+      // },
     });
-
+    console.log(result);
     const toolCalls: ToolCallInfo[] = [];
     let currentText = '';
     let streamError: Error | null = null;
@@ -48,6 +54,10 @@ export async function runAgent(
           currentText += chunk.text;
           // Hook into the UI
           callbacks.onToken(chunk.text);
+        }
+
+        if (chunk.type.includes('reasoning')) {
+          console.log('Reasoning chunk:', chunk);
         }
 
         if (chunk.type === 'tool-call') {
