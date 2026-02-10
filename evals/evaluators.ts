@@ -60,6 +60,8 @@ export const llmJudge = async (
     ],
   });
 
+  console.log(result.object.reason);
+
   // Convert 1-10 scale to 0-1 range
   return result.object.score / 10;
 };
