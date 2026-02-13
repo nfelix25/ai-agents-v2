@@ -1,0 +1,1038 @@
+[
+  {
+    "id": "short-feature-request",
+    "description": "Short conversation about adding a feature with specific requirements",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "I need to add a user authentication system to my Next.js app. I prefer using NextAuth.js and want to support Google OAuth."
+        },
+        {
+          "role": "assistant",
+          "content": "I'll help you set up NextAuth.js with Google OAuth. First, let me check your current project structure."
+        },
+        {
+          "role": "user",
+          "content": "The app uses TypeScript, Next.js 14 with app router, and I'm using PostgreSQL with Prisma as my database."
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect. I'll set up NextAuth.js v5 (Auth.js) which works well with Next.js 14 app router. We'll need to:\n1. Install dependencies\n2. Configure Prisma schema for auth\n3. Set up the auth route handler\n4. Add Google OAuth provider"
+        },
+        {
+          "role": "user",
+          "content": "Great! Also, I need to make sure sessions are stored in the database, not JWT tokens. Security is important for this project."
+        },
+        {
+          "role": "assistant",
+          "content": "Understood. I'll configure the session strategy to use database sessions instead of JWT. This is more secure for your use case."
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "Using NextAuth.js for authentication",
+          "Google OAuth required",
+          "Next.js 14 with app router",
+          "TypeScript project",
+          "PostgreSQL with Prisma",
+          "Database sessions (not JWT)",
+          "Security is a priority"
+        ],
+        "taskContext": "Setting up user authentication system",
+        "keyDecisions": [
+          "Use NextAuth.js v5 (Auth.js)",
+          "Database session strategy for security"
+        ],
+        "userPreferences": [
+          "TypeScript",
+          "Next.js app router",
+          "Database-backed sessions"
+        ]
+      }
+    }
+  },
+  {
+    "id": "long-debugging-session",
+    "description": "Extended debugging conversation with multiple failed attempts and solutions",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "My React app is crashing with 'Cannot read property map of undefined' but I can't figure out where it's coming from."
+        },
+        {
+          "role": "assistant",
+          "content": "Let me help you debug this. Can you share the error stack trace or tell me which component is causing the issue?"
+        },
+        {
+          "role": "user",
+          "content": "It's happening in my ProductList component. Here's the error:\n\nTypeError: Cannot read property 'map' of undefined\n  at ProductList (ProductList.tsx:15:23)\n  at renderWithHooks"
+        },
+        {
+          "role": "assistant",
+          "content": "The error is on line 15 of ProductList.tsx. It looks like you're trying to map over an array that's undefined. Let me check the component code."
+        },
+        {
+          "role": "user",
+          "content": "Here's the component:\n\n```tsx\nfunction ProductList() {\n  const { data } = useQuery('products', fetchProducts);\n  return (\n    <div>\n      {data.products.map(p => <ProductCard key={p.id} product={p} />)}\n    </div>\n  );\n}\n```"
+        },
+        {
+          "role": "assistant",
+          "content": "I see the issue. The `data` object is undefined during the initial render before the query completes. You need to handle the loading state. Try this:\n\n```tsx\nfunction ProductList() {\n  const { data, isLoading } = useQuery('products', fetchProducts);\n  \n  if (isLoading) return <div>Loading...</div>;\n  \n  return (\n    <div>\n      {data.products.map(p => <ProductCard key={p.id} product={p} />)}\n    </div>\n  );\n}\n```"
+        },
+        {
+          "role": "user",
+          "content": "That fixed it! But now I'm seeing another issue - when I delete a product, it doesn't update in the list immediately. I have to refresh the page."
+        },
+        {
+          "role": "assistant",
+          "content": "You need to invalidate the query cache after deleting. Are you using a mutation for the delete operation?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, here's my delete mutation:\n\n```tsx\nconst deleteMutation = useMutation(deleteProduct, {\n  onSuccess: () => {\n    alert('Product deleted!');\n  }\n});\n```"
+        },
+        {
+          "role": "assistant",
+          "content": "Add query invalidation to the onSuccess callback:\n\n```tsx\nconst queryClient = useQueryClient();\nconst deleteMutation = useMutation(deleteProduct, {\n  onSuccess: () => {\n    queryClient.invalidateQueries('products');\n    alert('Product deleted!');\n  }\n});\n```\n\nThis will refetch the products list after a successful deletion."
+        },
+        {
+          "role": "user",
+          "content": "Perfect! One more thing - the app is using React Query v4, not v5. Does that change anything?"
+        },
+        {
+          "role": "assistant",
+          "content": "No, the API is the same for this use case. React Query v4 and v5 both support `invalidateQueries` with the same syntax. You're good to go!"
+        },
+        {
+          "role": "user",
+          "content": "Awesome, everything works now. Thanks!"
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "React app using React Query v4",
+          "ProductList component had undefined data.products",
+          "Fixed by adding loading state check",
+          "Second issue: deleted products not updating in list",
+          "Fixed by invalidating queries in mutation onSuccess",
+          "useQueryClient and invalidateQueries('products')"
+        ],
+        "taskContext": "Debugging React app crashes and data synchronization",
+        "keyDecisions": [
+          "Add loading state to handle undefined data",
+          "Use query invalidation for cache updates"
+        ],
+        "userPreferences": [
+          "React Query v4"
+        ],
+        "problemsSolved": [
+          "Cannot read property 'map' of undefined",
+          "UI not updating after delete"
+        ]
+      }
+    }
+  },
+  {
+    "id": "complex-architecture-discussion",
+    "description": "Detailed architectural planning with multiple considerations and trade-offs",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "I'm building a real-time collaborative document editor (like Google Docs). What's the best architecture for this?"
+        },
+        {
+          "role": "assistant",
+          "content": "Great project! There are several architectural decisions to make:\n\n1. **Conflict resolution**: CRDT (Conflict-free Replicated Data Type) vs OT (Operational Transformation)\n2. **Backend**: WebSocket server vs serverless with pub/sub\n3. **Storage**: Document versioning strategy\n4. **Scale**: Expected number of concurrent users per document?\n\nWhat are your requirements?"
+        },
+        {
+          "role": "user",
+          "content": "We expect up to 50 concurrent users per document. The app needs to work offline and sync when back online. We're already using AWS for infrastructure."
+        },
+        {
+          "role": "assistant",
+          "content": "Given those requirements, I'd recommend:\n\n1. **CRDTs** (specifically Yjs) - better for offline-first than OT\n2. **WebSocket server** on AWS (ECS/Fargate) - more reliable than serverless for persistent connections\n3. **DynamoDB** for document storage with version history\n4. **S3** for snapshot backups every N operations\n\nYjs handles the complex conflict resolution and has great libraries for React, Quill, ProseMirror, etc."
+        },
+        {
+          "role": "user",
+          "content": "Interesting. We were considering Firestore because it has built-in real-time features. Why is that not ideal?"
+        },
+        {
+          "role": "assistant",
+          "content": "Firestore can work, but has limitations:\n\n**Pros:**\n- Built-in real-time sync\n- Offline support out of the box\n- Simpler to set up\n\n**Cons:**\n- Document size limit (1MB) - problematic for large docs\n- Write rate limits (1 write/second per document) - breaks with 50 concurrent users\n- Vendor lock-in (you mentioned AWS preference)\n- Harder to implement CRDT-based conflict resolution\n\nFor 50 concurrent users making rapid edits, you'll hit Firestore's write limits. A custom WebSocket + CRDT solution scales better."
+        },
+        {
+          "role": "user",
+          "content": "Good point about write limits. What about cost? Our budget is limited."
+        },
+        {
+          "role": "assistant",
+          "content": "Cost comparison for 1000 active documents, 50 users each:\n\n**Firestore:**\n- ~$180-300/month (document reads/writes)\n- Scales linearly, can get expensive\n\n**WebSocket + DynamoDB:**\n- ECS Fargate: ~$30-50/month (2 tasks)\n- DynamoDB: ~$25/month (on-demand)\n- S3: ~$5/month\n- Total: ~$60-80/month\n\n**Trade-off:** Custom solution is cheaper but requires more development time.\n\nIf budget is tight and you have dev time, go WebSocket + DynamoDB. If you need to ship fast and budget is flexible, Firestore is faster to implement."
+        },
+        {
+          "role": "user",
+          "content": "We have dev time but need to launch MVP in 2 months. What's a pragmatic approach?"
+        },
+        {
+          "role": "assistant",
+          "content": "Pragmatic approach for 2-month timeline:\n\n**Phase 1 (MVP):**\n- Use **Yjs + y-websocket** library (handles WebSocket boilerplate)\n- Deploy simple WebSocket server to **AWS App Runner** (easier than ECS)\n- Store documents in **DynamoDB** with Yjs update snapshots\n- Skip offline mode for MVP (add later)\n\n**Why this works:**\n- Yjs libraries handle 90% of complexity\n- App Runner auto-scales WebSocket server\n- Can migrate to ECS later if needed\n- Proven stack (used by Notion, Linear, etc.)\n\n**Libraries:**\n- `yjs` - CRDT engine\n- `y-websocket` - WebSocket provider\n- `y-prosemirror` or `y-quill` - editor binding\n\nTotal implementation: 3-4 weeks for core features."
+        },
+        {
+          "role": "user",
+          "content": "Perfect! Let's go with that. One concern - what about user presence (showing who's online and their cursor positions)?"
+        },
+        {
+          "role": "assistant",
+          "content": "Yjs has built-in awareness protocol for exactly this!\n\n```typescript\nimport { Awareness } from 'y-protocols/awareness'\n\nconst awareness = provider.awareness\n\n// Set local user state\nawareness.setLocalState({\n  user: { name: 'Alice', color: '#ff0000' },\n  cursor: { x: 100, y: 200 }\n})\n\n// Listen to other users\nawareness.on('change', () => {\n  const states = awareness.getStates()\n  // Update UI with cursor positions\n})\n```\n\nThis syncs automatically through the same WebSocket connection - no extra infrastructure needed!"
+        },
+        {
+          "role": "user",
+          "content": "Excellent. And for authentication - we're using Auth0."
+        },
+        {
+          "role": "assistant",
+          "content": "Auth0 works well here. You'll need to:\n\n1. **Authenticate WebSocket connections** - pass JWT token in connection params\n2. **Verify token** on the server before allowing document access\n3. **Authorize document access** - check user permissions in DynamoDB\n\nExample WebSocket server auth:\n\n```typescript\nwss.on('connection', async (ws, req) => {\n  const token = new URL(req.url, 'ws://base').searchParams.get('token')\n  const user = await verifyAuth0Token(token)\n  \n  if (!user) {\n    ws.close(4001, 'Unauthorized')\n    return\n  }\n  \n  // Check document access permissions\n  const canAccess = await checkDocumentPermission(user.id, docId)\n  if (!canAccess) {\n    ws.close(4003, 'Forbidden')\n    return\n  }\n  \n  // Proceed with Yjs setup\n})\n```"
+        },
+        {
+          "role": "user",
+          "content": "Great! I think we have a solid plan. Let's start implementing."
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "Building real-time collaborative document editor",
+          "Up to 50 concurrent users per document",
+          "Must support offline mode (not in MVP)",
+          "Using AWS infrastructure",
+          "Using Auth0 for authentication",
+          "2-month timeline for MVP",
+          "Budget constrained",
+          "Chosen stack: Yjs + y-websocket + AWS App Runner + DynamoDB",
+          "Firestore rejected due to write rate limits (1 write/sec)",
+          "Yjs awareness protocol for user presence/cursors",
+          "WebSocket auth via JWT token verification"
+        ],
+        "taskContext": "Planning and architecting collaborative document editor",
+        "keyDecisions": [
+          "Use Yjs CRDTs instead of Operational Transformation",
+          "AWS App Runner for WebSocket server (not ECS for MVP)",
+          "DynamoDB for document storage",
+          "Skip offline mode in MVP (add later)",
+          "Reject Firestore due to write limits and vendor lock-in",
+          "Use Yjs awareness protocol for presence"
+        ],
+        "userPreferences": [
+          "AWS infrastructure",
+          "Auth0 for authentication",
+          "Budget-conscious",
+          "Need to ship MVP in 2 months"
+        ],
+        "technicalConstraints": [
+          "50 concurrent users per document",
+          "Firestore 1 write/second limit is a blocker",
+          "Offline support required (post-MVP)",
+          "Real-time cursor positions needed"
+        ],
+        "rejectedOptions": [
+          "Firestore (write limits, vendor lock-in)",
+          "Serverless WebSockets (less reliable for persistent connections)",
+          "Operational Transformation (worse offline support than CRDTs)"
+        ]
+      }
+    }
+  },
+  {
+    "id": "refactoring-with-constraints",
+    "description": "Code refactoring discussion with specific constraints and preferences",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "I need to refactor this messy API route handler. It's doing too much.\n\n```typescript\nexport async function POST(req: Request) {\n  const body = await req.json();\n  const user = await db.user.findUnique({ where: { id: body.userId } });\n  if (!user) return new Response('User not found', { status: 404 });\n  if (!user.isActive) return new Response('User inactive', { status: 403 });\n  const order = await db.order.create({\n    data: {\n      userId: body.userId,\n      items: body.items,\n      total: body.items.reduce((sum, item) => sum + item.price * item.qty, 0)\n    }\n  });\n  await fetch('https://api.stripe.com/charges', {\n    method: 'POST',\n    headers: { 'Authorization': `Bearer ${process.env.STRIPE_KEY}` },\n    body: JSON.stringify({ amount: order.total, customer: user.stripeId })\n  });\n  await sendEmail(user.email, 'Order confirmed', `Your order #${order.id}`);\n  return Response.json(order);\n}\n```"
+        },
+        {
+          "role": "assistant",
+          "content": "This handler has several issues:\n\n1. **No error handling** - Stripe call or email could fail\n2. **No validation** - body.items could be malformed\n3. **Mixed concerns** - validation, business logic, external calls all in one place\n4. **No transaction** - order could be created but payment fails\n5. **Hard-coded logic** - total calculation should be in a service\n\nWhat's your preferred architecture pattern? Are you using a service layer, or do you prefer keeping everything in route handlers?"
+        },
+        {
+          "role": "user",
+          "content": "We're using a service layer pattern. We have a services/ directory with user.service.ts, order.service.ts, etc. Also, we're using Zod for validation."
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect! Here's how I'd refactor:\n\n1. **Validation** - Zod schema in the route handler\n2. **Service layer** - `orderService.createOrder()` for business logic\n3. **Error handling** - try/catch with proper error responses\n4. **Transaction** - Prisma transaction to ensure atomicity\n\nDo you want payment processing synchronous (user waits) or asynchronous (background job)?"
+        },
+        {
+          "role": "user",
+          "content": "Good question. We've had timeout issues with Stripe taking too long. Let's make it asynchronous using a job queue. We're already using BullMQ with Redis."
+        },
+        {
+          "role": "assistant",
+          "content": "Great choice. Here's the refactored approach:\n\n**1. Route handler** (validation + orchestration):\n```typescript\nimport { z } from 'zod';\nimport { orderService } from '@/services/order.service';\nimport { paymentQueue } from '@/queues/payment.queue';\n\nconst createOrderSchema = z.object({\n  userId: z.string().uuid(),\n  items: z.array(z.object({\n    productId: z.string(),\n    quantity: z.number().positive(),\n    price: z.number().positive()\n  })).min(1)\n});\n\nexport async function POST(req: Request) {\n  try {\n    const body = await req.json();\n    const validatedData = createOrderSchema.parse(body);\n    \n    const order = await orderService.createOrder(validatedData);\n    \n    // Queue payment processing\n    await paymentQueue.add('process-payment', {\n      orderId: order.id,\n      amount: order.total,\n      userId: validatedData.userId\n    });\n    \n    return Response.json({ \n      order, \n      message: 'Order created, processing payment' \n    });\n  } catch (error) {\n    if (error instanceof z.ZodError) {\n      return Response.json({ errors: error.errors }, { status: 400 });\n    }\n    // Handle other errors\n    return Response.json({ error: 'Internal error' }, { status: 500 });\n  }\n}\n```\n\n**2. Service layer** (business logic):\n```typescript\n// services/order.service.ts\nexport const orderService = {\n  async createOrder(data: CreateOrderInput) {\n    // Verify user\n    const user = await userService.getActiveUser(data.userId);\n    if (!user) throw new Error('User not found or inactive');\n    \n    // Calculate total\n    const total = this.calculateTotal(data.items);\n    \n    // Create order in transaction\n    const order = await db.order.create({\n      data: {\n        userId: data.userId,\n        items: data.items,\n        total,\n        status: 'PENDING'\n      }\n    });\n    \n    return order;\n  },\n  \n  calculateTotal(items: OrderItem[]) {\n    return items.reduce((sum, item) => sum + item.price * item.quantity, 0);\n  }\n};\n```\n\n**3. Payment queue worker** (async processing):\n```typescript\n// queues/workers/payment.worker.ts\npaymentQueue.process('process-payment', async (job) => {\n  const { orderId, amount, userId } = job.data;\n  \n  try {\n    const user = await db.user.findUnique({ where: { id: userId } });\n    \n    // Process payment\n    await stripe.charges.create({\n      amount,\n      customer: user.stripeId\n    });\n    \n    // Update order status\n    await db.order.update({\n      where: { id: orderId },\n      data: { status: 'PAID' }\n    });\n    \n    // Send confirmation email\n    await emailService.sendOrderConfirmation(user.email, orderId);\n  } catch (error) {\n    // Update order as failed\n    await db.order.update({\n      where: { id: orderId },\n      data: { status: 'PAYMENT_FAILED' }\n    });\n    throw error; // BullMQ will retry\n  }\n});\n```\n\nThoughts?"
+        },
+        {
+          "role": "user",
+          "content": "This looks great! Two things:\n1. We should verify the user owns the items before creating the order (check inventory)\n2. Can we add idempotency? Users sometimes double-click the submit button."
+        },
+        {
+          "role": "assistant",
+          "content": "Excellent points!\n\n**1. Inventory verification** - Add to `orderService.createOrder()`:\n\n```typescript\nasync createOrder(data: CreateOrderInput) {\n  const user = await userService.getActiveUser(data.userId);\n  if (!user) throw new Error('User not found or inactive');\n  \n  // NEW: Verify inventory\n  await inventoryService.verifyAvailability(data.items);\n  \n  const total = this.calculateTotal(data.items);\n  \n  // Create order and reserve inventory in transaction\n  const order = await db.$transaction(async (tx) => {\n    const order = await tx.order.create({\n      data: { userId: data.userId, items: data.items, total, status: 'PENDING' }\n    });\n    \n    // Reserve inventory\n    await inventoryService.reserveItems(data.items, order.id, tx);\n    \n    return order;\n  });\n  \n  return order;\n}\n```\n\n**2. Idempotency** - Use idempotency key in header:\n\n```typescript\nexport async function POST(req: Request) {\n  try {\n    const idempotencyKey = req.headers.get('Idempotency-Key');\n    if (!idempotencyKey) {\n      return Response.json(\n        { error: 'Idempotency-Key header required' },\n        { status: 400 }\n      );\n    }\n    \n    // Check if this request was already processed\n    const existing = await db.idempotentRequest.findUnique({\n      where: { key: idempotencyKey }\n    });\n    \n    if (existing) {\n      // Return cached response\n      return Response.json(existing.response);\n    }\n    \n    const body = await req.json();\n    const validatedData = createOrderSchema.parse(body);\n    \n    const order = await orderService.createOrder(validatedData);\n    \n    await paymentQueue.add('process-payment', {\n      orderId: order.id,\n      amount: order.total,\n      userId: validatedData.userId\n    });\n    \n    const response = { order, message: 'Order created, processing payment' };\n    \n    // Store idempotency record\n    await db.idempotentRequest.create({\n      data: {\n        key: idempotencyKey,\n        response: response,\n        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours\n      }\n    });\n    \n    return Response.json(response);\n  } catch (error) {\n    // Error handling...\n  }\n}\n```\n\nYou'll need to add the `IdempotentRequest` model to your Prisma schema:\n\n```prisma\nmodel IdempotentRequest {\n  id         String   @id @default(cuid())\n  key        String   @unique\n  response   Json\n  expiresAt  DateTime\n  createdAt  DateTime @default(now())\n  \n  @@index([expiresAt])\n}\n```"
+        },
+        {
+          "role": "user",
+          "content": "Perfect! One last thing - should we add rate limiting to prevent abuse?"
+        },
+        {
+          "role": "assistant",
+          "content": "Absolutely! For Next.js API routes, I recommend `@upstash/ratelimit` with your Redis instance (since you're already using Redis for BullMQ):\n\n```typescript\nimport { Ratelimit } from '@upstash/ratelimit';\nimport { Redis } from '@upstash/redis';\n\nconst redis = new Redis({\n  url: process.env.REDIS_URL,\n  token: process.env.REDIS_TOKEN\n});\n\nconst ratelimit = new Ratelimit({\n  redis,\n  limiter: Ratelimit.slidingWindow(10, '1 m'), // 10 requests per minute\n  analytics: true\n});\n\nexport async function POST(req: Request) {\n  try {\n    // Rate limit by user IP or user ID\n    const identifier = req.headers.get('x-user-id') || \n                       req.headers.get('x-forwarded-for') || \n                       'anonymous';\n    \n    const { success, limit, reset, remaining } = await ratelimit.limit(identifier);\n    \n    if (!success) {\n      return Response.json(\n        { error: 'Too many requests', reset },\n        { \n          status: 429,\n          headers: {\n            'X-RateLimit-Limit': limit.toString(),\n            'X-RateLimit-Remaining': remaining.toString(),\n            'X-RateLimit-Reset': reset.toString()\n          }\n        }\n      );\n    }\n    \n    // Continue with normal flow...\n    const idempotencyKey = req.headers.get('Idempotency-Key');\n    // ... rest of your code\n  } catch (error) {\n    // Error handling\n  }\n}\n```\n\nFor better DX, extract rate limiting to a middleware or higher-order function."
+        },
+        {
+          "role": "user",
+          "content": "Awesome! I have everything I need. Thanks!"
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "Using service layer pattern (services/ directory)",
+          "Using Zod for validation",
+          "Using BullMQ with Redis for job queue",
+          "Asynchronous payment processing to avoid timeouts",
+          "Using Prisma for database with transactions",
+          "Using Stripe for payments",
+          "Idempotency via Idempotency-Key header",
+          "Rate limiting with @upstash/ratelimit (10 requests per minute)",
+          "Inventory verification and reservation in transaction",
+          "Order status flow: PENDING → PAID or PAYMENT_FAILED"
+        ],
+        "taskContext": "Refactoring messy API route handler for order creation",
+        "keyDecisions": [
+          "Move business logic to orderService",
+          "Make payment processing asynchronous via queue",
+          "Add idempotency with 24-hour expiry",
+          "Add rate limiting using existing Redis instance",
+          "Use Prisma transactions for order + inventory reservation",
+          "Verify inventory before order creation"
+        ],
+        "userPreferences": [
+          "Service layer architecture",
+          "Zod validation",
+          "BullMQ for background jobs",
+          "Redis already in stack"
+        ],
+        "technicalConstraints": [
+          "Stripe API can be slow (timeouts)",
+          "Users double-click submit buttons",
+          "Need to prevent inventory overselling",
+          "Need abuse prevention"
+        ],
+        "newModels": [
+          "IdempotentRequest model with key, response, expiresAt fields"
+        ]
+      }
+    }
+  },
+  {
+    "id": "library-selection",
+    "description": "Choosing between multiple libraries with specific requirements",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "I need to add charts to my dashboard. What's the best React charting library?"
+        },
+        {
+          "role": "assistant",
+          "content": "Popular options include:\n\n1. **Recharts** - Simple, composable, good DX\n2. **Chart.js with react-chartjs-2** - Powerful, widely used\n3. **Victory** - Feature-rich, animatable\n4. **Nivo** - Beautiful defaults, great for data viz\n5. **Apache ECharts** - Very powerful, steep learning curve\n\nWhat types of charts do you need, and how complex is your data?"
+        },
+        {
+          "role": "user",
+          "content": "I need line charts, bar charts, and pie charts. The data updates in real-time via WebSocket. Performance is critical - we're showing 1000+ data points."
+        },
+        {
+          "role": "assistant",
+          "content": "For real-time updates with 1000+ points, performance is key:\n\n**Top choices:**\n\n1. **Chart.js** - Best performance for large datasets\n   - Uses canvas (faster than SVG for many points)\n   - Excellent decimation plugin for 1000+ points\n   - Built-in animations can be disabled for real-time\n\n2. **Apache ECharts** - Also excellent performance\n   - Canvas-based\n   - Built-in data sampling/aggregation\n   - More features but steeper learning curve\n\n**Not recommended:**\n- Recharts/Victory/Nivo - SVG-based, slower with 1000+ points\n\nI'd recommend **Chart.js** for your use case - best balance of performance and DX."
+        },
+        {
+          "role": "user",
+          "content": "The app uses TypeScript and we need dark mode support. Does Chart.js handle that well?"
+        },
+        {
+          "role": "assistant",
+          "content": "Yes, Chart.js works great with TypeScript!\n\n**TypeScript support:**\n- Full type definitions included\n- Strong typing for options, data, plugins\n- Good autocomplete/IntelliSense\n\n**Dark mode:**\n- Not automatic - you need to manually update theme colors\n- Typical approach:\n\n```typescript\nimport { Chart, ChartOptions } from 'chart.js';\n\nconst getChartOptions = (isDark: boolean): ChartOptions => ({\n  plugins: {\n    legend: {\n      labels: {\n        color: isDark ? '#e5e7eb' : '#1f2937'\n      }\n    }\n  },\n  scales: {\n    x: {\n      ticks: { color: isDark ? '#e5e7eb' : '#1f2937' },\n      grid: { color: isDark ? '#374151' : '#e5e7eb' }\n    },\n    y: {\n      ticks: { color: isDark ? '#e5e7eb' : '#1f2937' },\n      grid: { color: isDark ? '#374151' : '#e5e7eb' }\n    }\n  }\n});\n```\n\nIf you're using Tailwind CSS, you can sync with your theme colors."
+        },
+        {
+          "role": "user",
+          "content": "We are using Tailwind! Is there a way to make it more automatic?"
+        },
+        {
+          "role": "assistant",
+          "content": "Yes! Create a custom hook to read Tailwind colors:\n\n```typescript\nimport { useEffect, useState } from 'react';\nimport resolveConfig from 'tailwindcss/resolveConfig';\nimport tailwindConfig from '@/tailwind.config';\n\nconst fullConfig = resolveConfig(tailwindConfig);\n\nexport function useChartTheme() {\n  const [isDark, setIsDark] = useState(false);\n\n  useEffect(() => {\n    const observer = new MutationObserver(() => {\n      setIsDark(document.documentElement.classList.contains('dark'));\n    });\n\n    observer.observe(document.documentElement, {\n      attributes: true,\n      attributeFilter: ['class']\n    });\n\n    setIsDark(document.documentElement.classList.contains('dark'));\n\n    return () => observer.disconnect();\n  }, []);\n\n  const colors = fullConfig.theme.colors;\n\n  return {\n    text: isDark ? colors.gray[200] : colors.gray[800],\n    grid: isDark ? colors.gray[700] : colors.gray[200],\n    background: isDark ? colors.gray[800] : colors.white,\n  };\n}\n```\n\nThen use in your chart:\n\n```typescript\nfunction MyChart() {\n  const theme = useChartTheme();\n\n  const options: ChartOptions = {\n    plugins: {\n      legend: {\n        labels: { color: theme.text }\n      }\n    },\n    scales: {\n      x: {\n        ticks: { color: theme.text },\n        grid: { color: theme.grid }\n      },\n      y: {\n        ticks: { color: theme.text },\n        grid: { color: theme.grid }\n      }\n    }\n  };\n\n  // Chart component...\n}\n```\n\nChart will automatically re-render when theme changes!"
+        },
+        {
+          "role": "user",
+          "content": "Perfect! One more question - for real-time data, should I update the chart on every WebSocket message or batch updates?"
+        },
+        {
+          "role": "assistant",
+          "content": "**Batch updates** is the right approach! Updating on every message will cause:\n- Excessive re-renders\n- Janky animations\n- Wasted CPU cycles\n\nRecommended strategy:\n\n```typescript\nimport { useEffect, useRef } from 'react';\n\nfunction RealtimeChart() {\n  const chartRef = useRef<Chart>(null);\n  const pendingUpdates = useRef<DataPoint[]>([]);\n\n  useEffect(() => {\n    // Batch updates every 100ms\n    const interval = setInterval(() => {\n      if (pendingUpdates.current.length === 0) return;\n\n      const chart = chartRef.current;\n      if (!chart) return;\n\n      // Apply all pending updates at once\n      pendingUpdates.current.forEach(point => {\n        chart.data.labels.push(point.time);\n        chart.data.datasets[0].data.push(point.value);\n      });\n\n      // Limit data points to last 1000\n      if (chart.data.labels.length > 1000) {\n        chart.data.labels = chart.data.labels.slice(-1000);\n        chart.data.datasets[0].data = \n          chart.data.datasets[0].data.slice(-1000);\n      }\n\n      chart.update('none'); // 'none' disables animation for performance\n      pendingUpdates.current = [];\n    }, 100); // 10 FPS is smooth enough for dashboards\n\n    return () => clearInterval(interval);\n  }, []);\n\n  useEffect(() => {\n    // WebSocket listener\n    const ws = new WebSocket(WEBSOCKET_URL);\n\n    ws.onmessage = (event) => {\n      const dataPoint = JSON.parse(event.data);\n      pendingUpdates.current.push(dataPoint);\n    };\n\n    return () => ws.close();\n  }, []);\n\n  // Chart rendering...\n}\n```\n\n**Key optimizations:**\n1. Batch updates every 100ms (10 FPS)\n2. Use `update('none')` to disable animations\n3. Limit to last 1000 points (sliding window)\n4. Collect updates in ref (no state re-renders)"
+        },
+        {
+          "role": "user",
+          "content": "Excellent! I think Chart.js is the right choice. Let's implement it."
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "Chosen library: Chart.js with react-chartjs-2",
+          "Need line charts, bar charts, pie charts",
+          "Real-time data via WebSocket with 1000+ points",
+          "Using TypeScript with full type support",
+          "Using Tailwind CSS for styling",
+          "Dark mode support required",
+          "Performance is critical",
+          "Batch WebSocket updates every 100ms (10 FPS)",
+          "Disable animations with update('none')",
+          "Sliding window of last 1000 points",
+          "Use MutationObserver to detect Tailwind dark mode changes"
+        ],
+        "taskContext": "Selecting and implementing charting library for real-time dashboard",
+        "keyDecisions": [
+          "Chose Chart.js over Recharts/Victory/Nivo (SVG too slow)",
+          "Chose Chart.js over Apache ECharts (better DX)",
+          "Batch updates every 100ms instead of per-message",
+          "Disable animations for real-time performance",
+          "Create custom useChartTheme hook for Tailwind integration",
+          "Use ref for pending updates (avoid state re-renders)"
+        ],
+        "userPreferences": [
+          "TypeScript",
+          "Tailwind CSS",
+          "Dark mode support"
+        ],
+        "technicalConstraints": [
+          "1000+ data points",
+          "Real-time WebSocket updates",
+          "Performance critical"
+        ],
+        "rejectedOptions": [
+          "Recharts (SVG-based, slow with 1000+ points)",
+          "Victory (SVG-based, slow with large datasets)",
+          "Nivo (SVG-based, performance issues)",
+          "Apache ECharts (steep learning curve, overkill)"
+        ]
+      }
+    }
+  },
+  {
+    "id": "performance-optimization",
+    "description": "Multi-step performance optimization with measurements and trade-offs",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "My Next.js page is really slow. Lighthouse score is 32. How do I improve it?"
+        },
+        {
+          "role": "assistant",
+          "content": "A score of 32 indicates serious issues. Let's diagnose:\n\n1. **What's your page doing?** (e.g., data fetching, heavy components)\n2. **Is it SSR, SSG, or CSR?**\n3. **Any large dependencies?** (check bundle size)\n\nCan you run `npm run build` and share the output? That'll show bundle sizes."
+        },
+        {
+          "role": "user",
+          "content": "Here's the build output:\n\n```\nRoute (app)                              Size     First Load JS\n┌ ○ /                                    142 kB          385 kB\n├ ○ /dashboard                          2.1 MB         2.34 MB\n└ ○ /api/data                           0 B                0 B\n\n○ (Static) prerendered as static content\n```\n\nThe dashboard page is the slow one. It's using SSR (Server Component)."
+        },
+        {
+          "role": "assistant",
+          "content": "**2.34 MB First Load JS is extremely large!** The limit should be ~200-300 KB.\n\nLet's identify the culprits. Run:\n\n```bash\nnpx @next/bundle-analyzer\n```\n\nOr manually check what you're importing in the dashboard page. Common issues:\n- Heavy charting libraries (Chart.js, D3, etc.)\n- Moment.js (huge, use date-fns instead)\n- Lodash (import whole library vs individual functions)\n- Icon libraries (importing all icons)\n\nWhat libraries are you using on the dashboard?"
+        },
+        {
+          "role": "user",
+          "content": "I'm using:\n- Chart.js for graphs\n- Moment.js for dates\n- Lodash for utilities\n- React Icons (importing from 'react-icons/fa')\n- Framer Motion for animations\n\nMost of the page content is static - product stats that update once a day."
+        },
+        {
+          "role": "assistant",
+          "content": "Here are your issues and fixes:\n\n### 1. **Moment.js → date-fns** (saves ~200 KB)\n\n```typescript\n// Before\nimport moment from 'moment';\nconst formatted = moment(date).format('MMM DD, YYYY');\n\n// After\nimport { format } from 'date-fns';\nconst formatted = format(date, 'MMM dd, yyyy');\n```\n\n### 2. **Lodash - use specific imports** (saves ~50-100 KB)\n\n```typescript\n// Before\nimport _ from 'lodash';\n_.debounce(fn, 300);\n\n// After\nimport debounce from 'lodash/debounce';\ndebounce(fn, 300);\n```\n\n### 3. **React Icons - be specific** (saves ~100 KB)\n\n```typescript\n// Before\nimport { FaUser, FaHome } from 'react-icons/fa';\n\n// After\nimport { FaUser } from 'react-icons/fa/FaUser';\nimport { FaHome } from 'react-icons/fa/FaHome';\n```\n\nOr use `lucide-react` instead (much smaller).\n\n### 4. **Chart.js - use tree-shaking** (saves ~100 KB)\n\n```typescript\n// Before\nimport { Chart } from 'chart.js';\n\n// After - only import what you need\nimport {\n  Chart as ChartJS,\n  CategoryScale,\n  LinearScale,\n  LineElement,\n  PointElement,\n  Tooltip\n} from 'chart.js';\n\nChartJS.register(\n  CategoryScale,\n  LinearScale,\n  LineElement,\n  PointElement,\n  Tooltip\n);\n```\n\n### 5. **Framer Motion - use LazyMotion** (saves ~50 KB)\n\n```typescript\nimport { LazyMotion, domAnimation, m } from 'framer-motion';\n\n<LazyMotion features={domAnimation}>\n  <m.div animate={{ opacity: 1 }} />\n</LazyMotion>\n```\n\n### 6. **Use Static Generation** (page is mostly static!)\n\nChange from Server Component to Static Generation:\n\n```typescript\n// app/dashboard/page.tsx\nexport const revalidate = 86400; // Revalidate once per day\n\nexport default async function DashboardPage() {\n  const stats = await fetchStats();\n  return <Dashboard stats={stats} />;\n}\n```\n\nThis way, the page is pre-rendered and served as HTML.\n\nThese changes should reduce your bundle from 2.34 MB → ~400-500 KB."
+        },
+        {
+          "role": "user",
+          "content": "Great! I made those changes. New build output:\n\n```\nRoute (app)                              Size     First Load JS\n┌ ○ /                                    142 kB          385 kB\n├ ● /dashboard                           198 kB          441 kB\n└ ○ /api/data                           0 B                0 B\n\n● (SSG) prerendered as static HTML\n```\n\nMuch better! But Lighthouse is still showing 58. It says 'Largest Contentful Paint' is 4.2s."
+        },
+        {
+          "role": "assistant",
+          "content": "Good progress! 441 KB is much better. Now let's fix LCP.\n\n**LCP of 4.2s** is still slow (should be <2.5s). Common causes:\n\n1. **Slow images** - unoptimized or missing priority\n2. **Fonts blocking render** - not using `next/font`\n3. **Heavy client components** - hydration is slow\n4. **API calls blocking render**\n\nWhat's the first thing visible on your dashboard? A large hero image? A chart? Data table?"
+        },
+        {
+          "role": "user",
+          "content": "The first thing visible is a large chart showing revenue over time. The chart data comes from the database (already fetched server-side)."
+        },
+        {
+          "role": "assistant",
+          "content": "The chart is your LCP element. Chart.js requires client-side rendering, which delays LCP. Solutions:\n\n### Option 1: **Server-Side Render Chart as Image** (fastest LCP)\n\nUse QuickChart or similar to generate chart server-side:\n\n```typescript\n// Server Component\nasync function DashboardPage() {\n  const data = await fetchRevenueData();\n  \n  // Generate chart URL (server-side)\n  const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(\n    JSON.stringify({\n      type: 'line',\n      data: { labels: data.labels, datasets: [{ data: data.values }] }\n    })\n  )}`;\n  \n  return (\n    <Image \n      src={chartUrl} \n      alt=\"Revenue chart\"\n      width={800}\n      height={400}\n      priority // Critical for LCP!\n    />\n  );\n}\n```\n\nThis makes LCP instant (it's just an image).\n\n### Option 2: **Show Static Placeholder** (good UX)\n\nShow a skeleton/placeholder server-side, load chart client-side:\n\n```typescript\n// Server Component\nimport dynamic from 'next/dynamic';\n\nconst RevenueChart = dynamic(() => import('@/components/RevenueChart'), {\n  ssr: false,\n  loading: () => <ChartSkeleton /> // Fast LCP\n});\n\nexport default async function DashboardPage() {\n  const data = await fetchRevenueData();\n  \n  return (\n    <div>\n      <h1>Dashboard</h1>\n      <RevenueChart data={data} />\n    </div>\n  );\n}\n```\n\nThe skeleton loads instantly, chart hydrates after.\n\n### Option 3: **Use Streaming SSR** (advanced)\n\n```typescript\nimport { Suspense } from 'react';\n\nexport default async function DashboardPage() {\n  return (\n    <div>\n      <h1>Dashboard</h1>\n      <Suspense fallback={<ChartSkeleton />}>\n        <RevenueChartAsync />\n      </Suspense>\n    </div>\n  );\n}\n\nasync function RevenueChartAsync() {\n  const data = await fetchRevenueData();\n  return <RevenueChart data={data} />;\n}\n```\n\nWhich approach fits your use case better?"
+        },
+        {
+          "role": "user",
+          "content": "Option 2 sounds good. We want interactivity (hover tooltips on the chart), so server-rendered images won't work. I'll use the skeleton placeholder."
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect choice! Here's the full implementation:\n\n### 1. **Create Chart Skeleton**\n\n```typescript\n// components/ChartSkeleton.tsx\nexport function ChartSkeleton() {\n  return (\n    <div className=\"w-full h-[400px] bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse\">\n      <div className=\"h-full flex items-end justify-around p-8\">\n        {[40, 70, 55, 80, 65, 90, 75].map((height, i) => (\n          <div\n            key={i}\n            className=\"w-12 bg-gray-300 dark:bg-gray-700 rounded-t\"\n            style={{ height: `${height}%` }}\n          />\n        ))}\n      </div>\n    </div>\n  );\n}\n```\n\n### 2. **Dynamic Import Chart**\n\n```typescript\n// app/dashboard/page.tsx\nimport dynamic from 'next/dynamic';\nimport { ChartSkeleton } from '@/components/ChartSkeleton';\n\nconst RevenueChart = dynamic(\n  () => import('@/components/RevenueChart'),\n  { \n    ssr: false,\n    loading: () => <ChartSkeleton />\n  }\n);\n\nexport const revalidate = 86400;\n\nexport default async function DashboardPage() {\n  const data = await fetchRevenueData();\n  \n  return (\n    <div>\n      <h1>Revenue Dashboard</h1>\n      <RevenueChart data={data} />\n    </div>\n  );\n}\n```\n\n### 3. **Optimize Chart Component**\n\n```typescript\n// components/RevenueChart.tsx\n'use client';\n\nimport { memo } from 'react';\nimport { Line } from 'react-chartjs-2';\nimport { /* minimal Chart.js imports */ } from 'chart.js';\n\ninterface Props {\n  data: { labels: string[]; values: number[] };\n}\n\nconst RevenueChart = memo(function RevenueChart({ data }: Props) {\n  const chartData = {\n    labels: data.labels,\n    datasets: [{\n      label: 'Revenue',\n      data: data.values,\n      borderColor: 'rgb(59, 130, 246)',\n      tension: 0.3\n    }]\n  };\n\n  const options = {\n    responsive: true,\n    maintainAspectRatio: false,\n    plugins: {\n      legend: { display: false }\n    },\n    // Optimize for performance\n    animation: false\n  };\n\n  return (\n    <div className=\"h-[400px]\">\n      <Line data={chartData} options={options} />\n    </div>\n  );\n});\n\nexport default RevenueChart;\n```\n\n**Expected results:**\n- LCP: ~1.5-2s (skeleton renders immediately)\n- Chart loads ~500ms later (hydration)\n- Total bundle: ~450 KB\n- Lighthouse: 85-95\n\nThe skeleton matches your chart's visual footprint, so there's minimal layout shift!"
+        },
+        {
+          "role": "user",
+          "content": "Implemented! Lighthouse score is now 89. Thanks! One last thing - any other quick wins?"
+        },
+        {
+          "role": "assistant",
+          "content": "Score of 89 is great! Here are quick wins to hit 95+:\n\n### 1. **Optimize fonts** (if you haven't already)\n\n```typescript\n// app/layout.tsx\nimport { Inter } from 'next/font/google';\n\nconst inter = Inter({ \n  subsets: ['latin'],\n  display: 'swap',\n  preload: true\n});\n\nexport default function RootLayout({ children }) {\n  return (\n    <html lang=\"en\" className={inter.className}>\n      <body>{children}</body>\n    </html>\n  );\n}\n```\n\n### 2. **Add viewport meta tag** (if missing)\n\n```typescript\n// app/layout.tsx\nexport const metadata = {\n  viewport: 'width=device-width, initial-scale=1',\n};\n```\n\n### 3. **Preconnect to external domains**\n\n```typescript\n// app/layout.tsx\nexport default function RootLayout({ children }) {\n  return (\n    <html lang=\"en\">\n      <head>\n        <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\" />\n        <link rel=\"preconnect\" href=\"https://api.yourdomain.com\" />\n      </head>\n      <body>{children}</body>\n    </html>\n  );\n}\n```\n\n### 4. **Enable compression** (if using custom server)\n\nIn `next.config.js`:\n\n```javascript\nmodule.exports = {\n  compress: true, // Enabled by default, but verify\n};\n```\n\n### 5. **Add cache headers for static assets**\n\n```javascript\n// next.config.js\nmodule.exports = {\n  async headers() {\n    return [\n      {\n        source: '/_next/static/:path*',\n        headers: [\n          {\n            key: 'Cache-Control',\n            value: 'public, max-age=31536000, immutable',\n          },\n        ],\n      },\n    ];\n  },\n};\n```\n\nThese should push you to 92-95 easily!"
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "Next.js app with dashboard page",
+          "Initial Lighthouse score: 32, improved to 89",
+          "Initial bundle size: 2.34 MB, reduced to 441 KB",
+          "Using App Router (Server Components)",
+          "Dashboard uses Static Generation with revalidate: 86400",
+          "Replaced Moment.js with date-fns (saved ~200 KB)",
+          "Changed Lodash to specific imports (saved 50-100 KB)",
+          "Using Chart.js with tree-shaking",
+          "Using Framer Motion with LazyMotion",
+          "Chart.js is dynamically imported with ssr: false",
+          "ChartSkeleton used as loading placeholder for LCP",
+          "Revenue chart is the LCP element",
+          "Final LCP target: <2.5s (achieved ~1.5-2s)",
+          "Using Inter font with next/font",
+          "Dashboard data updates once per day"
+        ],
+        "taskContext": "Performance optimization for slow Next.js dashboard page",
+        "keyDecisions": [
+          "Use Static Generation instead of SSR (data updates daily)",
+          "Replace Moment.js with date-fns",
+          "Use specific Lodash imports",
+          "Tree-shake Chart.js imports",
+          "Dynamic import chart with skeleton placeholder (Option 2)",
+          "Disable chart animations for performance",
+          "Use memo() for RevenueChart component",
+          "Add preconnect for external domains",
+          "Set proper cache headers for static assets"
+        ],
+        "userPreferences": [
+          "Need interactive charts (hover tooltips)",
+          "Next.js App Router",
+          "Tailwind CSS for styling"
+        ],
+        "technicalConstraints": [
+          "Dashboard data is mostly static (updates daily)",
+          "Chart.js requires client-side rendering",
+          "LCP element is a chart (needs special handling)"
+        ],
+        "measurements": [
+          "Before: 2.34 MB bundle, 32 Lighthouse score, 4.2s LCP",
+          "After: 441 KB bundle, 89 Lighthouse score, ~1.5-2s LCP"
+        ],
+        "rejectedOptions": [
+          "Server-side chart rendering (QuickChart) - need interactivity",
+          "Streaming SSR - too complex for this use case"
+        ]
+      }
+    }
+  },
+  {
+    "id": "exploratory-codebase-questions",
+    "description": "Learning about existing codebase structure and patterns",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "I just joined a new project. Can you help me understand the folder structure? Here's what I see:\n\nsrc/\n  components/\n  hooks/\n  lib/\n  services/\n  store/\n  utils/"
+        },
+        {
+          "role": "assistant",
+          "content": "Sure! This looks like a fairly standard React project structure. To give you better guidance, can you tell me:\n\n1. What's inside the `lib/` directory?\n2. Are you using Redux, Zustand, or something else in `store/`?\n3. What framework is this - Create React App, Next.js, Vite?"
+        },
+        {
+          "role": "user",
+          "content": "It's Next.js 14 with App Router. The lib/ folder has database.ts, auth.ts, and some utility functions. The store/ folder uses Zustand."
+        },
+        {
+          "role": "assistant",
+          "content": "Great! Here's what each directory typically contains in a Next.js + Zustand project:\n\n**components/** - Reusable React components\n- Shared UI components (buttons, modals, forms)\n- Layout components\n- Feature-specific components\n\n**hooks/** - Custom React hooks\n- Reusable stateful logic\n- Data fetching hooks\n- UI interaction hooks\n\n**lib/** - External service integrations and core utilities\n- `database.ts` - Database client setup (Prisma/Drizzle?)\n- `auth.ts` - Authentication config (NextAuth/Auth0?)\n- Third-party integrations\n\n**services/** - Business logic layer\n- API service functions\n- Data transformations\n- Complex operations that don't fit in components\n\n**store/** - Zustand state management\n- Global state stores\n- Shared application state\n\n**utils/** - Pure utility functions\n- Formatters, validators, helpers\n- No side effects, easily testable\n\nNext.js 14 App Router also uses:\n- `app/` - Routes and pages\n- `public/` - Static assets\n\nIs there a specific part you're trying to work with?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, I need to add a new feature. Where should API calls go - services/ or lib/?"
+        },
+        {
+          "role": "assistant",
+          "content": "Good question! Here's the distinction:\n\n**lib/** - Configuration and setup for external services\n```typescript\n// lib/api-client.ts\nimport axios from 'axios';\n\nexport const apiClient = axios.create({\n  baseURL: process.env.NEXT_PUBLIC_API_URL,\n  timeout: 10000\n});\n```\n\n**services/** - Actual API calls and business logic\n```typescript\n// services/user.service.ts\nimport { apiClient } from '@/lib/api-client';\n\nexport const userService = {\n  async getUser(id: string) {\n    const { data } = await apiClient.get(`/users/${id}`);\n    return data;\n  },\n  \n  async updateUser(id: string, updates: UserUpdate) {\n    const { data } = await apiClient.patch(`/users/${id}`, updates);\n    return data;\n  }\n};\n```\n\n**Rule of thumb:**\n- **lib/** = \"How to connect\" (configuration, clients, instances)\n- **services/** = \"What to do\" (specific API calls, business operations)\n\nFor your new feature, create a new service file like `services/your-feature.service.ts` that uses the API client from `lib/`."
+        },
+        {
+          "role": "user",
+          "content": "That makes sense! One more thing - I see some files use 'use client' directive and some don't. When should I use it?"
+        },
+        {
+          "role": "assistant",
+          "content": "Great question! In Next.js 14 App Router:\n\n**Default: Server Components** (no directive needed)\n- Fetch data on the server\n- Access databases directly\n- Keep sensitive logic/keys hidden\n- Better performance, smaller JS bundle\n\n**'use client': Client Components**\n\nUse when you need:\n1. **Interactivity** - onClick, onChange, event handlers\n2. **React hooks** - useState, useEffect, useContext\n3. **Browser APIs** - localStorage, window, navigator\n4. **Third-party libraries** - that depend on browser features\n\n**Examples:**\n\n```typescript\n// Server Component (default) - NO 'use client'\n// app/dashboard/page.tsx\nimport { userService } from '@/services/user.service';\n\nexport default async function DashboardPage() {\n  const user = await userService.getUser('123');\n  return <div>{user.name}</div>;\n}\n```\n\n```typescript\n// Client Component - needs 'use client'\n// components/Counter.tsx\n'use client';\n\nimport { useState } from 'react';\n\nexport function Counter() {\n  const [count, setCount] = useState(0);\n  return <button onClick={() => setCount(count + 1)}>{count}</button>;\n}\n```\n\n**Best practice:** Keep components as Server Components by default, only add 'use client' when you need client-side features. You can compose them - Server Components can import Client Components!"
+        },
+        {
+          "role": "user",
+          "content": "Perfect! This helps a lot. I'll start working on my feature now."
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "Next.js 14 with App Router",
+          "Using Zustand for state management",
+          "lib/ contains database.ts and auth.ts (configuration)",
+          "services/ contains business logic and API calls",
+          "Server Components are default (no directive)",
+          "'use client' needed for interactivity, hooks, browser APIs",
+          "lib/ = 'how to connect', services/ = 'what to do'"
+        ],
+        "taskContext": "Learning project structure and conventions",
+        "keyDecisions": [
+          "API calls go in services/ directory",
+          "API client configuration goes in lib/",
+          "Use Server Components by default",
+          "Only use 'use client' when necessary"
+        ],
+        "userPreferences": [
+          "Next.js App Router",
+          "Zustand state management"
+        ]
+      }
+    }
+  },
+  {
+    "id": "concept-explanation",
+    "description": "Explaining technical concepts without immediate implementation",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "Can you explain what React Server Components are? I keep hearing about them but don't fully understand."
+        },
+        {
+          "role": "assistant",
+          "content": "Sure! React Server Components (RSC) are a new type of component that runs **only on the server**, never on the client.\n\n**Key differences from regular React components:**\n\n1. **Where they run:**\n   - Traditional React: Runs on server (SSR) + client (hydration)\n   - Server Components: Run ONLY on server, never sent to browser\n\n2. **What they can do:**\n   - ✅ Access databases directly\n   - ✅ Read server-side files\n   - ✅ Access environment variables safely\n   - ❌ Use hooks (useState, useEffect)\n   - ❌ Handle user interactions\n   - ❌ Access browser APIs\n\n3. **Benefits:**\n   - Smaller JavaScript bundles (code stays on server)\n   - Faster data fetching (no client-side roundtrips)\n   - Better security (sensitive logic hidden)\n\nWould you like me to show an example?"
+        },
+        {
+          "role": "user",
+          "content": "Yes please, a simple example would help."
+        },
+        {
+          "role": "assistant",
+          "content": "Here's a simple example:\n\n```typescript\n// Server Component (runs on server)\n// app/posts/page.tsx\nimport { db } from '@/lib/database';\n\nexport default async function PostsPage() {\n  // This runs on the SERVER - no API route needed!\n  const posts = await db.post.findMany();\n  \n  return (\n    <div>\n      <h1>Blog Posts</h1>\n      {posts.map(post => (\n        <article key={post.id}>\n          <h2>{post.title}</h2>\n          <p>{post.excerpt}</p>\n        </article>\n      ))}\n    </div>\n  );\n}\n```\n\n**What happens:**\n1. User requests the page\n2. Server runs the component\n3. Server fetches data from database\n4. Server renders HTML with the data\n5. Server sends **just the HTML** to browser (not the database code!)\n\n**Traditional approach would be:**\n```typescript\n// Old way - Client Component\n'use client';\nimport { useEffect, useState } from 'react';\n\nexport default function PostsPage() {\n  const [posts, setPosts] = useState([]);\n  \n  useEffect(() => {\n    // Make API call from browser\n    fetch('/api/posts')\n      .then(res => res.json())\n      .then(data => setPosts(data));\n  }, []);\n  \n  // Same rendering logic...\n}\n```\n\n**Server Component advantages here:**\n- No API route needed (`/api/posts`)\n- No loading state needed\n- Database code never sent to browser\n- Faster - one less network roundtrip"
+        },
+        {
+          "role": "user",
+          "content": "Oh that's cool! But what if I need a button that does something?"
+        },
+        {
+          "role": "assistant",
+          "content": "Great question! That's where **composition** comes in - you mix Server and Client Components:\n\n```typescript\n// Server Component\n// app/posts/page.tsx\nimport { db } from '@/lib/database';\nimport { LikeButton } from '@/components/LikeButton'; // Client Component\n\nexport default async function PostsPage() {\n  const posts = await db.post.findMany();\n  \n  return (\n    <div>\n      <h1>Blog Posts</h1>\n      {posts.map(post => (\n        <article key={post.id}>\n          <h2>{post.title}</h2>\n          <p>{post.excerpt}</p>\n          {/* Client Component for interactivity */}\n          <LikeButton postId={post.id} initialLikes={post.likes} />\n        </article>\n      ))}\n    </div>\n  );\n}\n```\n\n```typescript\n// Client Component (interactive)\n// components/LikeButton.tsx\n'use client';\n\nimport { useState } from 'react';\n\nexport function LikeButton({ postId, initialLikes }) {\n  const [likes, setLikes] = useState(initialLikes);\n  const [liked, setLiked] = useState(false);\n  \n  const handleLike = async () => {\n    await fetch(`/api/posts/${postId}/like`, { method: 'POST' });\n    setLikes(likes + 1);\n    setLiked(true);\n  };\n  \n  return (\n    <button onClick={handleLike} disabled={liked}>\n      ❤️ {likes}\n    </button>\n  );\n}\n```\n\n**The pattern:**\n- Server Component: Fetches data, renders static content\n- Client Component: Handles interactivity (buttons, forms, animations)\n- Server Component imports and renders Client Components as children\n\n**Best of both worlds:**\n- Fast data fetching on server\n- Interactive UI on client\n- Minimal JavaScript sent to browser"
+        },
+        {
+          "role": "user",
+          "content": "This is making sense now. So Server Components are basically like old-school PHP but with React?"
+        },
+        {
+          "role": "assistant",
+          "content": "That's actually a pretty good analogy! Here's the comparison:\n\n**Similarities to PHP:**\n- ✅ Runs on server\n- ✅ Can query databases directly\n- ✅ Generates HTML on server\n- ✅ No client-side JavaScript for the component itself\n\n**Key differences (why RSC is better):**\n\n1. **Component composition**\n   - PHP: Mix HTML with server logic (messy)\n   - RSC: Clean component tree, compose Server + Client Components\n\n2. **React features still work**\n   - PHP: Template logic only\n   - RSC: Full React (JSX, props, composition, etc.)\n\n3. **Interactivity**\n   - PHP: Need full page reload or separate AJAX\n   - RSC: Seamlessly mix with Client Components\n\n4. **Data fetching**\n   - PHP: Waterfalls (sequential)\n   - RSC: Can stream and parallelize\n\n5. **Type safety**\n   - PHP: Limited\n   - RSC: Full TypeScript support end-to-end\n\n**So yes**, it's \"PHP-like\" in that it's server-rendered, but with the full power of React's component model and modern DX!\n\nThink of it as: \"What if we took the good parts of server-rendering from the PHP era, but with React's component architecture?\""
+        },
+        {
+          "role": "user",
+          "content": "Perfect explanation! Now I get it. Thanks!"
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "React Server Components run only on server, never client",
+          "Server Components can access databases, files, environment variables",
+          "Server Components cannot use hooks or browser APIs",
+          "Benefits: smaller bundles, faster data fetching, better security",
+          "Pattern: Server Components fetch data, Client Components handle interactivity",
+          "Composition: Server Components can import Client Components",
+          "Similar to PHP but with React component model",
+          "Full TypeScript support end-to-end"
+        ],
+        "taskContext": "Learning and understanding React Server Components concept",
+        "keyDecisions": [],
+        "userPreferences": []
+      }
+    }
+  },
+  {
+    "id": "quick-clarification",
+    "description": "Short Q&A for quick clarification",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "Quick question - what's the difference between `const` and `let` in JavaScript?"
+        },
+        {
+          "role": "assistant",
+          "content": "**const:** Can't be reassigned after declaration\n```javascript\nconst x = 5;\nx = 10; // ❌ Error!\n```\n\n**let:** Can be reassigned\n```javascript\nlet y = 5;\ny = 10; // ✅ Works\n```\n\n**Important:** `const` doesn't make objects immutable, just the binding:\n```javascript\nconst user = { name: 'Alice' };\nuser.name = 'Bob'; // ✅ Works (modifying property)\nuser = { name: 'Charlie' }; // ❌ Error (reassigning)\n```\n\n**Best practice:** Use `const` by default, only use `let` when you need to reassign."
+        },
+        {
+          "role": "user",
+          "content": "Got it, thanks!"
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "const: cannot be reassigned",
+          "let: can be reassigned",
+          "const doesn't make objects immutable, just the binding",
+          "Best practice: use const by default"
+        ],
+        "taskContext": "Quick clarification on const vs let",
+        "keyDecisions": [],
+        "userPreferences": []
+      }
+    }
+  },
+  {
+    "id": "error-interpretation",
+    "description": "Understanding and interpreting error messages",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "I'm getting this error and I don't understand what it means:\n\nTypeError: Cannot read properties of null (reading 'addEventListener')\n    at setupEventListeners (app.js:42:15)"
+        },
+        {
+          "role": "assistant",
+          "content": "This error means you're trying to call `addEventListener` on something that is `null`.\n\n**What's happening at line 42:**\n```javascript\n// app.js:42\nsomething.addEventListener('click', handler);\n//        ^\n//        This is null!\n```\n\n**Common causes:**\n\n1. **DOM element doesn't exist:**\n```javascript\nconst button = document.querySelector('.my-button');\n// button is null if no element with class 'my-button' exists\nbutton.addEventListener('click', handler); // ❌ Error!\n```\n\n2. **Script runs before DOM is ready:**\n```javascript\n// HTML not loaded yet when this runs\nconst button = document.querySelector('.my-button');\n```\n\n**Solutions:**\n\n1. **Check if element exists:**\n```javascript\nconst button = document.querySelector('.my-button');\nif (button) {\n  button.addEventListener('click', handler);\n}\n```\n\n2. **Wait for DOM to load:**\n```javascript\ndocument.addEventListener('DOMContentLoaded', () => {\n  const button = document.querySelector('.my-button');\n  button.addEventListener('click', handler);\n});\n```\n\n3. **Put script at end of body:**\n```html\n<body>\n  <button class=\"my-button\">Click me</button>\n  \n  <!-- Scripts at the end -->\n  <script src=\"app.js\"></script>\n</body>\n```\n\nCan you share the code around line 42?"
+        },
+        {
+          "role": "user",
+          "content": "Here it is:\n\n```javascript\nfunction setupEventListeners() {\n  const searchInput = document.getElementById('search');\n  searchInput.addEventListener('input', handleSearch);\n}\n\nsetupEventListeners();\n```\n\nThe HTML has `<input id=\"search\" />`."
+        },
+        {
+          "role": "assistant",
+          "content": "The issue is **timing** - your script is running before the HTML is loaded.\n\n**Two ways to fix:**\n\n**Option 1: Wrap in DOMContentLoaded** (recommended)\n```javascript\nfunction setupEventListeners() {\n  const searchInput = document.getElementById('search');\n  searchInput.addEventListener('input', handleSearch);\n}\n\n// Wait for DOM to be ready\ndocument.addEventListener('DOMContentLoaded', setupEventListeners);\n```\n\n**Option 2: Move script tag**\n```html\n<body>\n  <input id=\"search\" />\n  \n  <!-- Move script to end of body -->\n  <script src=\"app.js\"></script>\n</body>\n```\n\nOption 1 is safer because it works regardless of where the script tag is placed!"
+        },
+        {
+          "role": "user",
+          "content": "Ah! That makes total sense. I'll use Option 1. Thanks!"
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "Error: Cannot read properties of null (reading 'addEventListener')",
+          "Cause: Trying to add event listener to null element",
+          "Common reason: Script runs before DOM is loaded",
+          "Fix Option 1: Wrap in DOMContentLoaded event listener (recommended)",
+          "Fix Option 2: Move script tag to end of body",
+          "Element was document.getElementById('search')"
+        ],
+        "taskContext": "Debugging and understanding error message",
+        "keyDecisions": [
+          "Use DOMContentLoaded to ensure DOM is ready"
+        ],
+        "problemsSolved": [
+          "TypeError: Cannot read properties of null"
+        ]
+      }
+    }
+  },
+  {
+    "id": "code-review-feedback",
+    "description": "Requesting feedback on written code",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "Can you review this function? I feel like it could be better but I'm not sure how.\n\n```typescript\nfunction processUsers(users: User[]) {\n  let result = [];\n  for (let i = 0; i < users.length; i++) {\n    if (users[i].active == true) {\n      if (users[i].age >= 18) {\n        result.push({\n          id: users[i].id,\n          name: users[i].name,\n          email: users[i].email\n        });\n      }\n    }\n  }\n  return result;\n}\n```"
+        },
+        {
+          "role": "assistant",
+          "content": "Good instinct! Here are some improvements:\n\n**Issues:**\n1. No type for `result` array\n2. Nested `if` statements (can be combined)\n3. Using `==` instead of `===`\n4. Traditional `for` loop (array methods more readable)\n5. Manual object construction (can be simplified)\n\n**Improved version:**\n\n```typescript\nfunction processUsers(users: User[]): Pick<User, 'id' | 'name' | 'email'>[] {\n  return users\n    .filter(user => user.active && user.age >= 18)\n    .map(({ id, name, email }) => ({ id, name, email }));\n}\n```\n\n**Changes made:**\n1. ✅ Added return type\n2. ✅ Combined conditions with `&&`\n3. ✅ Used `filter` + `map` (more functional)\n4. ✅ Destructuring in map\n5. ✅ Removed `== true` (redundant)\n\n**Even better with a type:**\n\n```typescript\ntype UserSummary = Pick<User, 'id' | 'name' | 'email'>;\n\nfunction processUsers(users: User[]): UserSummary[] {\n  return users\n    .filter(user => user.active && user.age >= 18)\n    .map(({ id, name, email }) => ({ id, name, email }));\n}\n```\n\nThis is more:\n- **Readable** - clear intent\n- **Type-safe** - return type explicit\n- **Maintainable** - less code to break\n- **Functional** - no mutations"
+        },
+        {
+          "role": "user",
+          "content": "Wow, that's much cleaner! What if the users array is really large? Is filter + map less performant than a for loop?"
+        },
+        {
+          "role": "assistant",
+          "content": "Great question! You're thinking about performance.\n\n**Short answer:** For most cases, the performance difference is negligible. Readability > micro-optimizations.\n\n**Long answer:**\n\n**filter + map:**\n- Two passes through the array\n- More functional, readable\n- Slightly more memory (intermediate array)\n\n**for loop:**\n- One pass through the array\n- Slightly faster for very large arrays (10,000+ items)\n- More verbose\n\n**Best of both worlds - use reduce:**\n\n```typescript\nfunction processUsers(users: User[]): UserSummary[] {\n  return users.reduce<UserSummary[]>((acc, user) => {\n    if (user.active && user.age >= 18) {\n      acc.push({ \n        id: user.id, \n        name: user.name, \n        email: user.email \n      });\n    }\n    return acc;\n  }, []);\n}\n```\n\nThis does it in one pass while staying functional.\n\n**But honestly:**\n- If `users.length < 10,000` → use `filter + map` (clearest)\n- If `users.length > 100,000` → use `for` loop or `reduce`\n- If performance really matters → **measure first** with real data\n\n**Premature optimization is the root of all evil!** Your original concern about readability was more important than the performance difference."
+        },
+        {
+          "role": "user",
+          "content": "That makes sense. I'll stick with filter + map since we only have a few hundred users. Thanks for the review!"
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect choice! For a few hundred users, `filter + map` is ideal. The readability and maintainability benefits far outweigh any microscopic performance difference.\n\nHappy coding!"
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "Original code used for loop with nested if statements",
+          "Improved to use filter + map for readability",
+          "Added proper TypeScript return type",
+          "Used destructuring in map",
+          "For few hundred items, filter + map is preferred over for loop",
+          "For 100,000+ items, reduce or for loop might be better",
+          "Readability > micro-optimizations",
+          "Should measure performance before optimizing"
+        ],
+        "taskContext": "Code review and improvement suggestions",
+        "keyDecisions": [
+          "Use filter + map for readability",
+          "Add TypeScript return type with Pick utility",
+          "Prioritize readability over performance for small datasets"
+        ],
+        "userPreferences": []
+      }
+    }
+  },
+  {
+    "id": "best-practices-discussion",
+    "description": "Discussing best practices without immediate implementation",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "What are some best practices for managing environment variables in a Next.js app?"
+        },
+        {
+          "role": "assistant",
+          "content": "Great question! Here are the key best practices for Next.js environment variables:\n\n**1. Use the right prefix:**\n- `NEXT_PUBLIC_*` - Exposed to browser (use sparingly!)\n- No prefix - Server-only (safe for secrets)\n\n```bash\n# .env.local\nDATABASE_URL=postgres://...          # Server only ✅\nNEXT_PUBLIC_API_URL=https://api...   # Browser exposed ⚠️\n```\n\n**2. Never commit secrets:**\n- Add `.env.local` to `.gitignore`\n- Commit `.env.example` with dummy values\n\n```bash\n# .env.example (committed)\nDATABASE_URL=your_database_url_here\nSTRIPE_SECRET_KEY=your_stripe_key_here\n```\n\n**3. Use different env files:**\n- `.env.local` - Local development (gitignored)\n- `.env.development` - Dev defaults (can commit)\n- `.env.production` - Production defaults (can commit)\n\nPrecedence: `.env.local` > `.env.development` > `.env`\n\n**4. Validate environment variables at startup:**\n\n```typescript\n// lib/env.ts\nimport { z } from 'zod';\n\nconst envSchema = z.object({\n  DATABASE_URL: z.string().url(),\n  STRIPE_SECRET_KEY: z.string().min(1),\n  NEXT_PUBLIC_API_URL: z.string().url(),\n});\n\nexport const env = envSchema.parse(process.env);\n```\n\nThis catches missing/invalid vars at build time!\n\n**5. Never use `NEXT_PUBLIC_` for secrets:**\n❌ `NEXT_PUBLIC_STRIPE_SECRET` - Exposed to browser!\n✅ `STRIPE_SECRET_KEY` - Server only\n\nAny questions on these?"
+        },
+        {
+          "role": "user",
+          "content": "Yes - what about API keys that need to be used in the browser, like Google Maps API key?"
+        },
+        {
+          "role": "assistant",
+          "content": "Excellent question! This is a common dilemma.\n\n**For browser APIs like Google Maps:**\n\n**Option 1: Use NEXT_PUBLIC_ with restrictions** (recommended for Google Maps)\n\n```bash\nNEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_key\n```\n\n**BUT** - Secure it in Google Cloud Console:\n1. Restrict by **HTTP referrer** (your domain only)\n2. Restrict by **API** (only Google Maps, not other services)\n3. Set up **usage quotas**\n\nThis way, even if someone sees the key, they can't abuse it.\n\n**Option 2: Proxy through your API** (more secure)\n\n```typescript\n// app/api/maps/route.ts\nimport { NextResponse } from 'next/server';\n\nexport async function GET(request: Request) {\n  const { searchParams } = new URL(request.url);\n  const query = searchParams.get('query');\n  \n  // Your server calls Google Maps with secret key\n  const response = await fetch(\n    `https://maps.googleapis.com/maps/api/geocode/json?address=${query}&key=${process.env.GOOGLE_MAPS_API_KEY}`\n  );\n  \n  const data = await response.json();\n  return NextResponse.json(data);\n}\n```\n\nClient code:\n```typescript\n// No API key in browser!\nconst response = await fetch(`/api/maps?query=${query}`);\n```\n\n**When to use each:**\n\n- **Option 1** (NEXT_PUBLIC_ + restrictions):\n  - Client-side SDKs that MUST run in browser\n  - Google Maps, Firebase, Analytics\n  - When latency matters (direct API calls)\n\n- **Option 2** (Proxy):\n  - More sensitive APIs\n  - Want to hide usage patterns\n  - Need to add server-side logic (rate limiting, caching)\n  - Can tolerate extra latency\n\nFor Google Maps specifically, Option 1 is fine with proper restrictions."
+        },
+        {
+          "role": "user",
+          "content": "That's really helpful! One more - should I validate env vars in every file that uses them, or just once at startup?"
+        },
+        {
+          "role": "assistant",
+          "content": "Great question! **Validate once at startup**, then import the validated env object everywhere.\n\n**Recommended pattern:**\n\n```typescript\n// lib/env.ts - Single source of truth\nimport { z } from 'zod';\n\nconst envSchema = z.object({\n  // Server-only vars\n  DATABASE_URL: z.string().url(),\n  STRIPE_SECRET_KEY: z.string().min(1),\n  \n  // Client-exposed vars\n  NEXT_PUBLIC_API_URL: z.string().url(),\n});\n\n// Parse and validate once\nexport const env = envSchema.parse(process.env);\n\n// TypeScript knows the exact shape now!\n// env.DATABASE_URL is typed as string (not string | undefined)\n```\n\nNow use it everywhere:\n\n```typescript\n// services/database.ts\nimport { env } from '@/lib/env';\n\nconst db = new PrismaClient({\n  datasourceUrl: env.DATABASE_URL // ✅ Typed, validated\n});\n```\n\n```typescript\n// app/api/payment/route.ts\nimport { env } from '@/lib/env';\nimport Stripe from 'stripe';\n\nconst stripe = new Stripe(env.STRIPE_SECRET_KEY);\n```\n\n**Benefits:**\n1. ✅ **Fail fast** - App won't start with invalid env\n2. ✅ **Type safety** - No `string | undefined`\n3. ✅ **DRY** - Validate once, use everywhere\n4. ✅ **Self-documenting** - Schema shows all required vars\n\n**Pro tip:** Import `env` in your root layout or a initialization file to ensure validation happens immediately:\n\n```typescript\n// app/layout.tsx\nimport { env } from '@/lib/env'; // Validates on import!\n\nexport default function RootLayout({ children }) {\n  return <html>{children}</html>;\n}\n```\n\nIf env is invalid, the app crashes at build/startup, not in production!"
+        },
+        {
+          "role": "user",
+          "content": "Perfect! This is exactly what I needed to know. Thanks!"
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "NEXT_PUBLIC_ prefix exposes variables to browser",
+          "No prefix = server-only (safe for secrets)",
+          "Never commit .env.local, use .env.example instead",
+          "Validate env vars once at startup using Zod",
+          "For browser APIs (Google Maps): use NEXT_PUBLIC_ with API restrictions",
+          "Alternative: proxy through API route to hide keys",
+          "Import validated env object everywhere, don't re-validate",
+          "Precedence: .env.local > .env.development > .env",
+          "Google Maps API key should be restricted by HTTP referrer and API"
+        ],
+        "taskContext": "Learning best practices for environment variable management",
+        "keyDecisions": [
+          "Validate environment variables once at startup",
+          "Use Zod schema for validation and type safety",
+          "Use NEXT_PUBLIC_ with restrictions for client-side APIs",
+          "Proxy sensitive APIs through API routes"
+        ],
+        "userPreferences": []
+      }
+    }
+  },
+  {
+    "id": "brainstorming-approach",
+    "description": "Brainstorming different approaches to a problem",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "I need to implement a feature where users can collaborate on documents in real-time, but I'm not sure what approach to take. Any ideas?"
+        },
+        {
+          "role": "assistant",
+          "content": "Let me help you think through different approaches! First, some clarifying questions:\n\n1. What kind of documents? (Text, code, diagrams, spreadsheets?)\n2. How many concurrent users per document?\n3. What's your current tech stack?\n4. Do you need offline support?\n5. What's your budget/timeline?"
+        },
+        {
+          "role": "user",
+          "content": "Text documents (like Google Docs), up to 10 concurrent users, we're using React and Node.js, offline would be nice but not required for MVP, and we have 3 months."
+        },
+        {
+          "role": "assistant",
+          "content": "Great! Here are your main options:\n\n## Option 1: Operational Transformation (OT)\n**Examples:** Google Docs, Firepad\n\n**How it works:**\n- Transforms concurrent operations to maintain consistency\n- Complex algorithm but proven at scale\n\n**Pros:**\n- Battle-tested (Google Docs uses it)\n- Great for text editing\n- Deterministic results\n\n**Cons:**\n- Complex to implement from scratch\n- Harder to add offline support later\n- Steep learning curve\n\n**Libraries:**\n- ShareDB (full featured)\n- ot.js (lower level)\n\n## Option 2: CRDTs (Conflict-free Replicated Data Types)\n**Examples:** Notion, Linear, Figma\n\n**How it works:**\n- Data structures that automatically merge without conflicts\n- Each edit is independent and commutative\n\n**Pros:**\n- Offline-first by design\n- Simpler mental model\n- Easier to scale\n- Modern approach\n\n**Cons:**\n- Larger data structures (more memory)\n- Less mature libraries for text than OT\n\n**Libraries:**\n- Yjs (best for text, great ecosystem)\n- Automerge (general purpose)\n\n## Option 3: Simple Last-Write-Wins (LWW)\n**Examples:** Notion's block-level editing\n\n**How it works:**\n- Lock granularity at paragraph/block level\n- Last edit wins for each block\n\n**Pros:**\n- Very simple to implement\n- Works well for structured documents\n- Easy to understand and debug\n\n**Cons:**\n- Not true character-level collaboration\n- Can lose edits if two users edit same block\n- Less \"Google Docs\" feel\n\n**Implementation:**\n- WebSockets + MongoDB with timestamps\n- Simple conflict resolution logic\n\n## My Recommendation for Your Case\n\nGiven your constraints (3 months, 10 users, MVP):\n\n**Go with Yjs (CRDT approach)**\n\n**Why:**\n- Good libraries (yjs + y-prosemirror/y-quill)\n- 2-3 week implementation time\n- Scales to your needs (10 users easily)\n- Offline support possible later (not in MVP)\n- Active community\n- Used by modern apps (Notion, Linear)\n\nWould you like me to outline a high-level architecture with Yjs?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, please! A high-level architecture would be super helpful."
+        },
+        {
+          "role": "assistant",
+          "content": "Here's a high-level architecture using Yjs:\n\n## Architecture Components\n\n```\n┌─────────────────────────────────────────────┐\n│  Browser (React App)                        │\n│  ┌────────────────────────────────────┐    │\n│  │  Editor (ProseMirror/Quill)        │    │\n│  │  + y-prosemirror/y-quill binding   │    │\n│  └──────────────┬─────────────────────┘    │\n│                 │                            │\n│  ┌──────────────▼─────────────────────┐    │\n│  │  Yjs Document (CRDT data)          │    │\n│  └──────────────┬─────────────────────┘    │\n│                 │                            │\n│  ┌──────────────▼─────────────────────┐    │\n│  │  y-websocket Provider              │    │\n│  │  (syncs with server)               │    │\n│  └──────────────┬─────────────────────┘    │\n└─────────────────┼───────────────────────────┘\n                  │ WebSocket\n                  │\n┌─────────────────▼───────────────────────────┐\n│  WebSocket Server (Node.js)                 │\n│  ┌────────────────────────────────────┐    │\n│  │  y-websocket server                │    │\n│  │  (broadcasts updates)              │    │\n│  └──────────────┬─────────────────────┘    │\n│                 │                            │\n│  ┌──────────────▼─────────────────────┐    │\n│  │  Persistence Layer                 │    │\n│  │  - MongoDB/Postgres                │    │\n│  │  - Stores Yjs updates + snapshots  │    │\n│  └────────────────────────────────────┘    │\n└─────────────────────────────────────────────┘\n```\n\n## Tech Stack\n\n**Frontend:**\n- React\n- ProseMirror or Quill (rich text editor)\n- yjs (CRDT library)\n- y-prosemirror or y-quill (binding)\n- y-websocket (WebSocket provider)\n\n**Backend:**\n- Node.js + Express\n- ws (WebSocket library)\n- y-websocket server\n- MongoDB or PostgreSQL (persistence)\n\n## Data Flow\n\n1. **User types in editor**\n2. Editor → Yjs binding detects change\n3. Yjs creates update (binary format)\n4. y-websocket sends update to server\n5. Server broadcasts to all connected clients\n6. Other clients apply update to their Yjs doc\n7. Their editors update automatically\n8. Server persists update to database\n\n## Implementation Phases\n\n**Week 1-2: Basic Setup**\n- Set up ProseMirror/Quill editor\n- Integrate Yjs\n- Basic WebSocket server\n- Test with 2 users locally\n\n**Week 3-4: Persistence**\n- Store Yjs updates in database\n- Load document on connection\n- Snapshots for performance\n\n**Week 5-6: User Features**\n- User awareness (cursors, presence)\n- Authentication/authorization\n- Document permissions\n\n**Week 7-9: Polish & Testing**\n- Handle disconnections/reconnections\n- Conflict testing\n- Performance optimization\n- UI polish\n\n**Week 10-12: Buffer & Deployment**\n- Load testing (10+ concurrent users)\n- Deploy to production\n- Monitoring and error handling\n\n## Key Libraries\n\n```json\n{\n  \"dependencies\": {\n    \"yjs\": \"^13.6.0\",\n    \"y-prosemirror\": \"^1.2.0\",\n    \"y-websocket\": \"^1.5.0\",\n    \"prosemirror-view\": \"^1.32.0\",\n    \"prosemirror-state\": \"^1.4.0\"\n  }\n}\n```\n\nThis gives you a solid MVP in 3 months. Want me to drill into any specific part?"
+        },
+        {
+          "role": "user",
+          "content": "This is perfect! Really helpful breakdown. I think I have enough to get started. Thanks!"
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "Need real-time collaboration for text documents",
+          "Up to 10 concurrent users per document",
+          "Using React and Node.js",
+          "3-month timeline for MVP",
+          "Offline nice-to-have but not required for MVP",
+          "Three approaches discussed: OT, CRDTs, Last-Write-Wins",
+          "Recommended: Yjs (CRDT approach)",
+          "Tech stack: React, ProseMirror/Quill, Yjs, y-websocket, MongoDB/PostgreSQL",
+          "Implementation timeline: 12 weeks broken into 4 phases",
+          "Key libraries: yjs, y-prosemirror, y-websocket"
+        ],
+        "taskContext": "Brainstorming approaches for real-time collaborative document editing",
+        "keyDecisions": [
+          "Recommended Yjs (CRDT) over OT and LWW",
+          "Use ProseMirror or Quill as editor",
+          "WebSocket for real-time communication",
+          "MongoDB or PostgreSQL for persistence"
+        ],
+        "userPreferences": [
+          "React and Node.js stack",
+          "3-month timeline",
+          "Up to 10 concurrent users"
+        ],
+        "rejectedOptions": [
+          "Operational Transformation (too complex for timeline)",
+          "Last-Write-Wins (not true character-level collaboration)"
+        ]
+      }
+    }
+  },
+  {
+    "id": "follow-up-questions",
+    "description": "Series of follow-up questions building on previous context",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "How do I deploy a Next.js app to Vercel?"
+        },
+        {
+          "role": "assistant",
+          "content": "Deploying to Vercel is very straightforward:\n\n**Method 1: GitHub Integration (Recommended)**\n\n1. Push your code to GitHub\n2. Go to vercel.com and sign in\n3. Click \"New Project\"\n4. Import your GitHub repository\n5. Vercel auto-detects Next.js and configures everything\n6. Click \"Deploy\"\n\nThat's it! Vercel automatically:\n- Builds your app\n- Deploys to production\n- Gives you a URL (your-app.vercel.app)\n- Sets up CI/CD (auto-deploys on git push)\n\n**Method 2: Vercel CLI**\n\n```bash\nnpm i -g vercel\nvercel\n```\n\nFollow the prompts, and you're deployed!\n\nDo you have your code in a Git repository?"
+        },
+        {
+          "role": "user",
+          "content": "Yes, it's on GitHub. What about environment variables? I have some API keys."
+        },
+        {
+          "role": "assistant",
+          "content": "Good question! Environment variables are handled in Vercel's dashboard:\n\n**Steps:**\n\n1. In Vercel dashboard → Your Project → Settings → Environment Variables\n2. Add your variables:\n   - Key: `DATABASE_URL`\n   - Value: `your_database_url`\n   - Environment: Production (or Preview, Development)\n3. Click \"Save\"\n4. Redeploy your app (or it auto-redeploys)\n\n**Important:**\n\n- **Server-only vars** (secrets): Just add them, they're not exposed\n- **Client-side vars**: Must use `NEXT_PUBLIC_` prefix\n\n**Example:**\n```\nDATABASE_URL=postgres://...           # Server only ✅\nSTRIPE_SECRET_KEY=sk_live_...         # Server only ✅\nNEXT_PUBLIC_API_URL=https://api...    # Exposed to browser ⚠️\n```\n\n**Pro tip:** You can also import from `.env` file:\n- Dashboard → Environment Variables → \"Add from .env\"\n- Paste your entire `.env` file content\n\nDo you need to set up environment variables for different environments (preview vs production)?"
+        },
+        {
+          "role": "user",
+          "content": "Yes! I want different database URLs for preview and production. How do I do that?"
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect use case! Vercel supports three environment types:\n\n**Environment Types:**\n\n1. **Production** - Your main branch (usually `main` or `master`)\n2. **Preview** - Pull requests and other branches\n3. **Development** - Local development (vercel dev)\n\n**How to set different values:**\n\n1. Go to Settings → Environment Variables\n2. Add `DATABASE_URL`:\n   - Value: `postgres://production-db...`\n   - Check ✅ **Production**\n   - Click \"Save\"\n3. Add another `DATABASE_URL`:\n   - Value: `postgres://preview-db...`\n   - Check ✅ **Preview**\n   - Click \"Save\"\n4. (Optional) Add for Development:\n   - Value: `postgres://localhost...`\n   - Check ✅ **Development**\n\n**What happens:**\n\n- `main` branch deploys → uses production DATABASE_URL\n- PR branches deploy → uses preview DATABASE_URL\n- `vercel dev` locally → uses development DATABASE_URL\n\n**Visual:**\n\n```\nDATABASE_URL\n├─ Production: postgres://prod-db.com\n├─ Preview: postgres://staging-db.com\n└─ Development: postgres://localhost:5432\n```\n\nThis way you can test changes with preview database before merging to production!\n\nAnything else about the deployment setup?"
+        },
+        {
+          "role": "user",
+          "content": "One more thing - what about database migrations? Should I run them automatically on deploy or manually?"
+        },
+        {
+          "role": "assistant",
+          "content": "Great question! This is an important decision.\n\n## Option 1: Manual Migrations (Recommended for production)\n\n**Pros:**\n- More control over timing\n- Can review migration before running\n- Avoid race conditions (multiple deploys)\n- Safer for production\n\n**Cons:**\n- Extra manual step\n- Can forget to run them\n\n**How to do it:**\n\nRun migrations separately before deploying:\n\n```bash\n# Connect to production database\nnpx prisma migrate deploy\n\n# Then deploy app\ngit push\n```\n\n## Option 2: Automatic Migrations\n\n**Pros:**\n- Convenient\n- Never forget\n- Good for simple apps\n\n**Cons:**\n- ⚠️ Can cause downtime if migration is slow\n- ⚠️ Race conditions if multiple instances deploy\n- ⚠️ Hard to rollback\n\n**How to do it:**\n\nAdd build script in `package.json`:\n\n```json\n{\n  \"scripts\": {\n    \"build\": \"prisma migrate deploy && next build\"\n  }\n}\n```\n\n## My Recommendation\n\n**For your case:**\n\n- **Production**: Manual migrations\n- **Preview**: Automatic migrations (safe to experiment)\n\n**Setup:**\n\n```json\n// package.json\n{\n  \"scripts\": {\n    \"build\": \"npm run migrate:preview && next build\",\n    \"migrate:preview\": \"[ \"$VERCEL_ENV\" = \"preview\" ] && prisma migrate deploy || echo 'Skipping migration'\",\n    \"migrate:production\": \"prisma migrate deploy\"\n  }\n}\n```\n\n**Workflow:**\n1. Preview deployments auto-run migrations (safe)\n2. Production deployments skip migrations\n3. Manually run `npm run migrate:production` when ready\n\nThis gives you automation for testing and control for production!"
+        },
+        {
+          "role": "user",
+          "content": "Perfect! That's exactly what I needed. Thanks for all the help!"
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "Deploying Next.js to Vercel via GitHub integration",
+          "Environment variables set in Vercel dashboard",
+          "Three environment types: Production, Preview, Development",
+          "Server-only vars don't need NEXT_PUBLIC_ prefix",
+          "Client-side vars need NEXT_PUBLIC_ prefix",
+          "Different DATABASE_URL for production vs preview environments",
+          "Manual migrations recommended for production",
+          "Automatic migrations OK for preview deployments",
+          "Vercel auto-deploys on git push with GitHub integration"
+        ],
+        "taskContext": "Learning how to deploy Next.js app to Vercel with proper environment and migration setup",
+        "keyDecisions": [
+          "Use GitHub integration for deployment",
+          "Set different environment variables for production vs preview",
+          "Use manual migrations for production",
+          "Use automatic migrations for preview"
+        ],
+        "userPreferences": [
+          "Code is on GitHub",
+          "Need different database URLs for environments",
+          "Using Prisma for database"
+        ]
+      }
+    }
+  },
+  {
+    "id": "casual-progress-check",
+    "description": "Casual check-in during a longer task",
+    "data": {
+      "originalConversation": [
+        {
+          "role": "user",
+          "content": "Hey, I implemented the authentication system we discussed earlier. It's working but I have a question about the session handling."
+        },
+        {
+          "role": "assistant",
+          "content": "Great to hear you got it working! What's your question about session handling?"
+        },
+        {
+          "role": "user",
+          "content": "Should sessions expire after a certain time, or should they last indefinitely until the user logs out?"
+        },
+        {
+          "role": "assistant",
+          "content": "Good security question! Here's the standard approach:\n\n## Recommended: Combination Strategy\n\n**Use both:**\n1. **Session expiration** (absolute timeout)\n2. **Idle timeout** (inactivity timeout)\n\n### Session Expiration\n\n**When:** After a fixed time (e.g., 30 days)\n**Why:** Security - even if token is stolen, it expires\n\n```typescript\nconst session = {\n  userId: user.id,\n  expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days\n};\n```\n\n### Idle Timeout\n\n**When:** After period of inactivity (e.g., 24 hours)\n**Why:** Security - inactive sessions automatically log out\n\n```typescript\nconst session = {\n  userId: user.id,\n  lastActivityAt: new Date(),\n  maxIdleTime: 24 * 60 * 60 * 1000 // 24 hours\n};\n\n// Update on every request\nfunction updateActivity(session) {\n  session.lastActivityAt = new Date();\n}\n```\n\n### Common Timeouts by App Type\n\n**Banking/Financial:**\n- Session: 15-30 minutes\n- Idle: 5-10 minutes\n- Very strict\n\n**E-commerce:**\n- Session: 7-30 days\n- Idle: 24 hours\n- Balance convenience and security\n\n**Social Media:**\n- Session: 30-90 days\n- Idle: None (or very long)\n- Prioritize convenience\n\n**SaaS/Productivity:**\n- Session: 30 days\n- Idle: 7 days\n- Middle ground\n\n### My Recommendation\n\nFor most apps:\n```typescript\n{\n  maxAge: 30 * 24 * 60 * 60 * 1000,  // 30 days absolute\n  maxIdleTime: 7 * 24 * 60 * 60 * 1000  // 7 days idle\n}\n```\n\nWhat type of app are you building?"
+        },
+        {
+          "role": "user",
+          "content": "It's a productivity SaaS app, so 30 days session with 7 days idle makes sense. Thanks!"
+        },
+        {
+          "role": "assistant",
+          "content": "Perfect! That's a good balance for a productivity app. Your users won't get logged out too frequently, but you still have reasonable security.\n\nJust remember to:\n1. Update `lastActivityAt` on each authenticated request\n2. Check both expiration and idle timeout on auth\n3. Show a \"session expired\" message (not just a redirect)\n\nGood luck with the rest of the implementation!"
+        }
+      ],
+      "criticalInfo": {
+        "mustPreserve": [
+          "Implemented authentication system",
+          "Question about session expiration vs indefinite sessions",
+          "Recommended: use both session expiration and idle timeout",
+          "Session expiration: absolute timeout (e.g., 30 days)",
+          "Idle timeout: inactivity timeout (e.g., 7 days)",
+          "For productivity SaaS: 30 days session, 7 days idle recommended",
+          "Need to update lastActivityAt on each request",
+          "Check both expiration and idle timeout on auth"
+        ],
+        "taskContext": "Follow-up question during authentication implementation",
+        "keyDecisions": [
+          "Use combination of session expiration and idle timeout",
+          "30 days absolute expiration",
+          "7 days idle timeout"
+        ],
+        "userPreferences": [
+          "Building productivity SaaS app"
+        ]
+      }
+    }
+  }
+]

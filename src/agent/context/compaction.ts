@@ -105,9 +105,13 @@ function messagesToText(messages: ModelMessage[]): string {
 export async function compactConversation(
   messages: ModelMessage[],
   model: string = 'gpt-5-mini',
+  strategy: 'A' | 'B' = 'A',
 ): Promise<any> {
   // Filter out system messages - they're handled separately
   const conversationMessages = messages.filter((m) => m.role !== 'system');
+
+  const prompt =
+    strategy === 'A' ? SUMMARIZATION_PROMPT_A : SUMMARIZATION_PROMPT_B;
 
   if (conversationMessages.length === 0) {
     return [];
@@ -117,7 +121,7 @@ export async function compactConversation(
 
   const { text: summary } = await generateText({
     model: openai(model),
-    prompt: SUMMARIZATION_PROMPT_A + conversationText,
+    prompt: prompt + conversationText,
   });
 
   // Create compacted messages
