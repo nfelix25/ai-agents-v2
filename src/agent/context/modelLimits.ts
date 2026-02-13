@@ -3,7 +3,7 @@ import type { ModelLimits } from '../../types.ts';
 /**
  * Default threshold for context window usage (80%)
  */
-export const DEFAULT_THRESHOLD = 0.8;
+export const DEFAULT_THRESHOLD = 0.02;
 
 /**
  * Model limits registry

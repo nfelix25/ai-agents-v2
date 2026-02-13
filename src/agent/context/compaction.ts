@@ -1,6 +1,7 @@
 import { generateText, type ModelMessage } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { extractMessageText } from './tokenEstimator.ts';
+import fs from 'fs';
 
 const SUMMARIZATION_PROMPT_A = `
   You are a conversation summarizer. Your task is to create a concise summary of the conversation so far that preserves:
@@ -68,6 +69,9 @@ export async function compactConversation(
         "I understand. I've reviewed the summary of our conversation and I'm ready to continue. How can I help you next?",
     },
   ];
+
+  // Use Node to write summary to a file for debugging/inspection
+  fs.writeFileSync('conversation_summary.txt', summary);
 
   return compactedMessages;
 }
