@@ -106,7 +106,7 @@ export async function compactConversation(
   messages: ModelMessage[],
   model: string = 'gpt-5-mini',
   strategy: 'A' | 'B' = 'A',
-): Promise<any> {
+): Promise<ModelMessage[]> {
   // Filter out system messages - they're handled separately
   const conversationMessages = messages.filter((m) => m.role !== 'system');
 

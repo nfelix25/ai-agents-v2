@@ -128,3 +128,50 @@ export interface MultiTurnDatasetEntry {
     description?: string;
   };
 }
+
+// Compaction evaluation types
+export interface CompactionEvalData {
+  originalConversation: ModelMessage[];
+  criticalInfo: {
+    mustPreserve: string[];
+    taskContext: string;
+    keyDecisions: string[];
+    userPreferences: string[];
+    technicalConstraints?: string[];
+    problemsSolved?: string[];
+    rejectedOptions?: string[];
+    measurements?: string[];
+    newModels?: string[];
+  };
+}
+
+export type CompactionStrategy = 'A' | 'B';
+
+export interface CompactionTarget {
+  strategy: CompactionStrategy;
+  id: string;
+  description: string;
+}
+
+export interface CompactionResult {
+  id: string;
+  strategy: CompactionStrategy;
+  originalLength: number;
+  compactedLength: number;
+  compactedText: string;
+  criticalInfo: CompactionEvalData['criticalInfo'];
+  originalTokens: number;
+  compactedTokens: number;
+  compressionRatio: number;
+}
+
+export interface AgentAfterCompactionData {
+  conversationHistory: ModelMessage[];
+  compactionStrategy: CompactionStrategy;
+  nextUserPrompt: string;
+  tools: any; // Replace with actual tool type if available
+}
+
+export interface AgentAfterCompactionTarget extends MultiTurnTarget {
+  criticalContext: string[];
+}
