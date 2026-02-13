@@ -5,14 +5,27 @@ import { estimateTokens, extractMessageText } from './tokenEstimator.ts';
 export type CompactionPromptProfile = 'native' | 'normalized';
 
 const SUMMARIZATION_PROMPT_A = `
-  You are a conversation summarizer. Your task is to create a concise summary of the conversation so far that preserves:
+  You are a conversation summarizer. Produce a compact handoff that preserves only information needed to continue the task correctly.
 
-  1. Key decisions and conclusions reached.
-  2. Important context and facts mentioned.
-  3. Any pending tasks or questions.
-  4. The overall goal of the conversation.
+  Priority to preserve:
+  1) Current goal/task focus
+  2) Decisions made + rationale (including rejected options and why)
+  3) Hard constraints and stable preferences
+  4) Critical facts (exact names, numbers, IDs, versions, paths, APIs)
+  5) State transitions (before -> after, bug -> fix -> outcome)
+  6) Open questions and immediate next steps
 
-  Be concise, but complete. The summary should allow the conversation to continue naturally.
+  Output format:
+  - If the conversation is short/simple, use:
+    Goal | Decisions | Do Not Forget
+  - Otherwise use:
+    Goal | Decisions | Constraints & Preferences | Open Questions | Next Steps | Do Not Forget
+
+  Rules:
+  - Be concise and non-redundant; each fact appears once.
+  - If a section has no content, write "None".
+  - Do not add new assumptions; if uncertain, label as "Assumption".
+  - Keep summary roughly 30-60% of source length (prefer shorter for short chats).
 
   Conversation to summarize:
 `;
