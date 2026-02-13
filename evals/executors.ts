@@ -17,14 +17,16 @@ import type {
   MultiTurnEvalData,
   MultiTurnResult,
   CompactionEvalData,
-  CompactionTarget,
   CompactionResult,
   AgentAfterCompactionData,
   AgentAfterCompactionTarget,
 } from './types.ts';
 import { SYSTEM_PROMPT } from '../src/agent/system/prompt.ts';
 import { estimateMessagesTokens } from '../src/agent/context/tokenEstimator.ts';
-import { compactConversation } from '../src/agent/context/compaction.ts';
+import {
+  compactConversation,
+  getCompactionPromptTokenEstimate,
+} from '../src/agent/context/compaction.ts';
 
 const TOOL_DEFINITIONS: Record<
   string,
@@ -160,7 +162,6 @@ export const multiTurnWithMocks = async (
 
 export async function compactionQualityExecutor(
   data: CompactionEvalData,
-  target: CompactionTarget,
 ): Promise<CompactionResult> {
   // Estimate original tokens
   const originalTokens = estimateMessagesTokens(data.originalConversation);
@@ -169,7 +170,11 @@ export async function compactionQualityExecutor(
   const compacted = await compactConversation(
     data.originalConversation,
     'gpt-5-mini',
-    target.strategy,
+    data.strategy,
+    {
+      promptProfile: data.promptProfile,
+      maxOutputTokens: data.summaryMaxOutputTokens,
+    },
   );
 
   // Estimate compacted tokens
@@ -179,8 +184,13 @@ export async function compactionQualityExecutor(
   const compressionRatio = 1 - compactedTokens.total / originalTokens.total;
 
   return {
-    id: target.id,
-    strategy: target.strategy,
+    id: data.id,
+    strategy: data.strategy,
+    promptProfile: data.promptProfile ?? 'native',
+    promptTokenEstimate: getCompactionPromptTokenEstimate(
+      data.strategy,
+      data.promptProfile ?? 'native',
+    ),
     originalLength: data.originalConversation.length,
     compactedLength: compacted.length,
     compactedText: (compacted[0]?.content as string) ?? '',

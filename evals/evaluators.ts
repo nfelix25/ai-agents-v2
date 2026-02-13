@@ -21,6 +21,36 @@ const judgeSchema = z.object({
   reason: z.string().describe('Brief explanation for the score'),
 });
 
+export interface CompactionJudgeInsight {
+  id: string;
+  description: string;
+  strategy: string;
+  promptProfile: string;
+  promptTokenEstimate: number;
+  overallScore: number;
+  informationPreservation: number;
+  clarity: number;
+  completeness: number;
+  conciseness: number;
+  reason: string;
+  missingInfo: string[];
+  wellPreserved: string[];
+  improvementSuggestions: string[];
+  originalTokens: number;
+  compactedTokens: number;
+  compressionRatio: number;
+}
+
+const compactionJudgeInsights: CompactionJudgeInsight[] = [];
+
+export function resetCompactionJudgeInsights(): void {
+  compactionJudgeInsights.length = 0;
+}
+
+export function getCompactionJudgeInsights(): CompactionJudgeInsight[] {
+  return [...compactionJudgeInsights];
+}
+
 /**
  * Evaluator: LLM-as-judge for output quality.
  * Uses structured output to reliably assess if the agent's response is correct.
@@ -157,7 +187,12 @@ export function toolSelectionScore(
 export async function compactionQualityJudge(
   output: CompactionResult,
   target: CompactionTarget,
-): Promise<number> {
+): Promise<Record<string, number>> {
+  const formatNumberedList = (items?: string[]) =>
+    (items?.length ?? 0) > 0 ?
+      items!.map((item, i) => `${i + 1}. ${item}`).join('\n')
+    : 'None provided';
+
   const { object } = await generateObject({
     model: openai('gpt-5.1'),
     providerOptions: { openai: { reasoningEffort: 'high' } },
@@ -175,9 +210,14 @@ export async function compactionQualityJudge(
 
   Return JSON with:
   - score: number (1-10)
+  - informationPreservation: number (1-10)
+  - clarity: number (1-10)
+  - completeness: number (1-10)
+  - conciseness: number (1-10)
   - reason: string (explain the score)
   - missingInfo: array of critical info that was lost
-  - wellPreserved: array of critical info that was well preserved`,
+  - wellPreserved: array of critical info that was well preserved
+  - improvementSuggestions: array of practical improvements`,
     prompt: `
   ## Original Conversation Stats
   - Messages: ${output.originalLength}
@@ -192,31 +232,16 @@ export async function compactionQualityJudge(
   ## CRITICAL INFORMATION THAT MUST BE PRESERVED
 
   ### Must Preserve (critical facts):
-  ${output.criticalInfo.mustPreserve
-    .map(
-      (item, i) => `${i + 1}. 
-  ${item}`,
-    )
-    .join('\n')}
+  ${formatNumberedList(output.criticalInfo.mustPreserve)}
 
   ### Task Context:
   ${output.criticalInfo.taskContext}
 
   ### Key Decisions:
-  ${output.criticalInfo.keyDecisions
-    .map(
-      (item, i) => `${i + 1}. 
-  ${item}`,
-    )
-    .join('\n')}
+  ${formatNumberedList(output.criticalInfo.keyDecisions)}
 
   ### User Preferences:
-  ${output.criticalInfo.userPreferences
-    .map(
-      (item, i) => `${i + 1}. 
-  ${item}`,
-    )
-    .join('\n')}
+  ${formatNumberedList(output.criticalInfo.userPreferences)}
 
   ${
     output.criticalInfo.technicalConstraints ?
@@ -251,6 +276,10 @@ export async function compactionQualityJudge(
         .min(1)
         .max(10)
         .describe('Score from 1-10 where 10 is perfect'),
+      informationPreservation: z.number().min(1).max(10),
+      clarity: z.number().min(1).max(10),
+      completeness: z.number().min(1).max(10),
+      conciseness: z.number().min(1).max(10),
       reason: z.string().describe('Brief explanation for the score'),
       missingInfo: z
         .array(z.string())
@@ -260,10 +289,42 @@ export async function compactionQualityJudge(
         .describe(
           'List of critical info items that were well preserved in the summary',
         ),
+      improvementSuggestions: z
+        .array(z.string())
+        .describe('Actionable suggestions to improve this summary'),
     }),
   });
 
-  return object.score / 10; // Normalize to 0-1 range
+  compactionJudgeInsights.push({
+    id: output.id,
+    description: target?.description ?? '',
+    strategy: output.strategy,
+    promptProfile: output.promptProfile,
+    promptTokenEstimate: output.promptTokenEstimate,
+    overallScore: object.score / 10,
+    informationPreservation: object.informationPreservation / 10,
+    clarity: object.clarity / 10,
+    completeness: object.completeness / 10,
+    conciseness: object.conciseness / 10,
+    reason: object.reason,
+    missingInfo: object.missingInfo,
+    wellPreserved: object.wellPreserved,
+    improvementSuggestions: object.improvementSuggestions,
+    originalTokens: output.originalTokens,
+    compactedTokens: output.compactedTokens,
+    compressionRatio: output.compressionRatio,
+  });
+
+  return {
+    overallQuality: object.score / 10,
+    infoPreservation: object.informationPreservation / 10,
+    clarity: object.clarity / 10,
+    completeness: object.completeness / 10,
+    conciseness: object.conciseness / 10,
+    qualityNoConciseness:
+      (object.informationPreservation + object.clarity + object.completeness) /
+      30,
+  };
 }
 
 export function compressionRatioScore(

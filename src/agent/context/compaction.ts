@@ -1,6 +1,8 @@
 import { generateText, type ModelMessage } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { extractMessageText } from './tokenEstimator.ts';
+import { estimateTokens, extractMessageText } from './tokenEstimator.ts';
+
+export type CompactionPromptProfile = 'native' | 'normalized';
 
 const SUMMARIZATION_PROMPT_A = `
   You are a conversation summarizer. Your task is to create a concise summary of the conversation so far that preserves:
@@ -79,6 +81,62 @@ const SUMMARIZATION_PROMPT_B = `
   Now produce the JSON compaction for the provided conversation.
 `;
 
+const NORMALIZED_SHARED_PROMPT = `
+  You are a conversation summarizer.
+
+  Preserve only information that changes future behavior:
+  1. Current task and goal.
+  2. Decisions already made and why.
+  3. Hard constraints and stable preferences.
+  4. Open questions and next steps.
+  5. A short "do not forget" list of critical facts.
+
+  Output format (plain text, not JSON):
+  - Goal:
+  - Decisions:
+  - Constraints/Preferences:
+  - Open Questions:
+  - Next Steps:
+  - Do Not Forget:
+
+  Keep it concise and bounded (roughly 180-240 tokens).
+`;
+
+const NORMALIZED_STYLE_A =
+  'Style A: concise narrative sentences under each section.';
+const NORMALIZED_STYLE_B =
+  'Style B: concise atomic bullets under each section.';
+
+export function getCompactionPrompt(
+  strategy: 'A' | 'B',
+  promptProfile: CompactionPromptProfile = 'native',
+): string {
+  if (promptProfile === 'native') {
+    return strategy === 'A' ? SUMMARIZATION_PROMPT_A : SUMMARIZATION_PROMPT_B;
+  }
+
+  const styleDirective =
+    strategy === 'A' ? NORMALIZED_STYLE_A : NORMALIZED_STYLE_B;
+
+  return `${NORMALIZED_SHARED_PROMPT}
+  ${styleDirective}
+
+  Conversation to summarize:
+`;
+}
+
+export function getCompactionPromptTokenEstimate(
+  strategy: 'A' | 'B',
+  promptProfile: CompactionPromptProfile = 'native',
+): number {
+  return estimateTokens(getCompactionPrompt(strategy, promptProfile));
+}
+
+export interface CompactionOptions {
+  promptProfile?: CompactionPromptProfile;
+  maxOutputTokens?: number;
+}
+
 /**
  * Format messages array as readable text for summarization
  */
@@ -106,12 +164,12 @@ export async function compactConversation(
   messages: ModelMessage[],
   model: string = 'gpt-5-mini',
   strategy: 'A' | 'B' = 'A',
+  options: CompactionOptions = {},
 ): Promise<ModelMessage[]> {
   // Filter out system messages - they're handled separately
   const conversationMessages = messages.filter((m) => m.role !== 'system');
 
-  const prompt =
-    strategy === 'A' ? SUMMARIZATION_PROMPT_A : SUMMARIZATION_PROMPT_B;
+  const prompt = getCompactionPrompt(strategy, options.promptProfile);
 
   if (conversationMessages.length === 0) {
     return [];
@@ -122,6 +180,7 @@ export async function compactConversation(
   const { text: summary } = await generateText({
     model: openai(model),
     prompt: prompt + conversationText,
+    maxOutputTokens: options.maxOutputTokens,
   });
 
   // Create compacted messages

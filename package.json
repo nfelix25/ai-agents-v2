@@ -15,7 +15,18 @@
     "eval": "npx lmnr eval",
     "eval:file-tools": "npx lmnr eval evals/file-tools.eval.ts",
     "eval:shell-tools": "npx lmnr eval evals/shell-tools.eval.ts",
-    "eval:agent": "npx lmnr eval evals/agent-multiturn.eval.ts"
+    "eval:agent": "npx lmnr eval evals/agent-multiturn.eval.ts",
+    "eval:compaction": "tsx evals/compaction-quality.eval.ts",
+    "eval:compaction:a": "tsx evals/compaction-quality.eval.ts --strategy=A",
+    "eval:compaction:b": "tsx evals/compaction-quality.eval.ts --strategy=B",
+    "eval:compaction:compare": "npm run eval:compaction:a && npm run eval:compaction:b",
+    "eval:compaction:a:normalized": "tsx evals/compaction-quality.eval.ts --strategy=A --prompt-profile=normalized",
+    "eval:compaction:b:normalized": "tsx evals/compaction-quality.eval.ts --strategy=B --prompt-profile=normalized",
+    "eval:compaction:compare:normalized": "npm run eval:compaction:a:normalized && npm run eval:compaction:b:normalized",
+    "eval:compaction:compare:normalized:capped": "tsx evals/compaction-quality.eval.ts --strategy=A --prompt-profile=normalized --summary-max-output-tokens=500 && tsx evals/compaction-quality.eval.ts --strategy=B --prompt-profile=normalized --summary-max-output-tokens=500",
+    "eval:compaction:report": "tsx evals/compare-compaction-insights.ts",
+    "eval:compaction-agent": "tsx evals/agent-after-compaction.eval.ts",
+    "eval:all-compaction": "npm run eval:compaction && npm run eval:compaction-agent"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.7",
