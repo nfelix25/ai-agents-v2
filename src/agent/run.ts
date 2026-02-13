@@ -8,7 +8,13 @@ import { filterCompatibleMessages } from './system/filterMessages.ts';
 
 import type { AgentCallbacks, ToolCallInfo } from '../types.ts';
 import { executeTool } from './executeTool.ts';
-import { open } from 'fs';
+import {
+  estimateMessagesTokens,
+  getModelLimits,
+  isOverThreshold,
+  calculateUsagePercentage,
+  DEFAULT_THRESHOLD,
+} from './context/index.ts';
 
 const MODEL_NAME = 'gpt-5-mini';
 
@@ -19,9 +25,11 @@ export async function runAgent(
   conversationHistory: ModelMessage[],
   callbacks: AgentCallbacks,
 ): Promise<ModelMessage[]> {
+  const modelLimits = getModelLimits(MODEL_NAME);
+  console.log(`Using model ${MODEL_NAME} with limits:`, modelLimits);
   // Filter and check if we need to compact the conversation history before starting
-
   const workingHistory = filterCompatibleMessages(conversationHistory);
+  // const preCheckTokens =
 
   const messages: ModelMessage[] = [
     { role: 'system', content: SYSTEM_PROMPT },
