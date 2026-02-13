@@ -31,7 +31,7 @@ const SUMMARIZATION_PROMPT_B = `
 
   SCHEMA
   {
-    "task_focus": "1–2 sentences describing the current primary objective(s).",
+    "task_focus": "1–2 sentences (each) describing the current objective(s).",
     "user_profile": {
       "stable_preferences": ["bullet-ish strings; only long-lived preferences"],
       "style_tone_preferences": ["e.g., concise vs detailed; formatting; etc."],
