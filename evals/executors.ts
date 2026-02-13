@@ -16,8 +16,13 @@ import type {
   SingleTurnResult,
   MultiTurnEvalData,
   MultiTurnResult,
+  CompactionEvalData,
+  CompactionTarget,
+  CompactionResult,
 } from './types.ts';
 import { SYSTEM_PROMPT } from '../src/agent/system/prompt.ts';
+import { estimateMessagesTokens } from '../src/agent/context/tokenEstimator.ts';
+import { compactConversation } from '../src/agent/context/compaction.ts';
 
 const TOOL_DEFINITIONS: Record<
   string,
@@ -150,3 +155,36 @@ export const multiTurnWithMocks = async (
     toolCallOrder: allToolCalls,
   };
 };
+
+export async function compactionQualityExecutor(
+  data: CompactionEvalData,
+  target: CompactionTarget,
+): Promise<CompactionResult> {
+  // Estimate original tokens
+  const originalTokens = estimateMessagesTokens(data.originalConversation);
+
+  // Compact the conversation with the specified strategy
+  const compacted = await compactConversation(
+    data.originalConversation,
+    'gpt-5-mini',
+    target.strategy,
+  );
+
+  // Estimate compacted tokens
+  const compactedTokens = estimateMessagesTokens(compacted);
+
+  // Calculate compression ratio
+  const compressionRatio = 1 - compactedTokens.total / originalTokens.total;
+
+  return {
+    id: target.id,
+    strategy: target.strategy,
+    originalLength: data.originalConversation.length,
+    compactedLength: compacted.length,
+    compactedText: (compacted[0]?.content as string) ?? '',
+    criticalInfo: data.criticalInfo,
+    originalTokens: originalTokens.total,
+    compactedTokens: compactedTokens.total,
+    compressionRatio,
+  };
+}
