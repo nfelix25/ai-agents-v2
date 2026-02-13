@@ -19,6 +19,8 @@ import type {
   CompactionEvalData,
   CompactionTarget,
   CompactionResult,
+  AgentAfterCompactionData,
+  AgentAfterCompactionTarget,
 } from './types.ts';
 import { SYSTEM_PROMPT } from '../src/agent/system/prompt.ts';
 import { estimateMessagesTokens } from '../src/agent/context/tokenEstimator.ts';
@@ -187,4 +189,23 @@ export async function compactionQualityExecutor(
     compactedTokens: compactedTokens.total,
     compressionRatio,
   };
+}
+
+export async function agentAfterCompactionExecutor(
+  data: AgentAfterCompactionData,
+  target: AgentAfterCompactionTarget,
+): Promise<MultiTurnResult> {
+  const compactedConversation = await compactConversation(
+    data.conversationHistory,
+    'gpt-5-mini',
+    data.compactionStrategy,
+  );
+
+  // Prepend system prompt to compacted conversation
+  const messages: ModelMessage[] = [
+    ...compactedConversation,
+    { role: 'user', content: data.nextUserPrompt },
+  ];
+
+  return await multiTurnWithMocks({ messages, mockTools: data.tools });
 }
