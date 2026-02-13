@@ -49,6 +49,26 @@ export async function runAgent(
 
   let fullResponse = '';
 
+  const reportTokenUsage = () => {
+    if (callbacks.onTokenUsage) {
+      const usage = estimateMessagesTokens(messages);
+
+      callbacks.onTokenUsage({
+        inputTokens: usage.input,
+        outputTokens: usage.output,
+        totalTokens: usage.total,
+        contextWindow: modelLimits.contextWindow,
+        threshold: DEFAULT_THRESHOLD,
+        percentage: calculateUsagePercentage(
+          usage.total,
+          modelLimits.contextWindow,
+        ),
+      });
+    }
+  };
+
+  reportTokenUsage();
+
   while (true) {
     const result = streamText({
       model: openai(MODEL_NAME),
@@ -61,26 +81,6 @@ export async function runAgent(
       //   },
       // },
     });
-
-    const reportTokenUsage = () => {
-      if (callbacks.onTokenUsage) {
-        const usage = estimateMessagesTokens(messages);
-
-        callbacks.onTokenUsage({
-          inputTokens: usage.input,
-          outputTokens: usage.output,
-          totalTokens: usage.total,
-          contextWindow: modelLimits.contextWindow,
-          threshold: DEFAULT_THRESHOLD,
-          percentage: calculateUsagePercentage(
-            usage.total,
-            modelLimits.contextWindow,
-          ),
-        });
-      }
-    };
-
-    reportTokenUsage();
 
     const toolCalls: ToolCallInfo[] = [];
     let currentText = '';
@@ -140,11 +140,13 @@ export async function runAgent(
     if (finishReason !== 'tool-calls' || toolCalls.length === 0) {
       const responseMessages = await result.response;
       messages.push(...responseMessages.messages);
+      reportTokenUsage();
       break;
     }
 
     const responseMessages = await result.response;
     messages.push(...responseMessages.messages);
+    reportTokenUsage();
 
     for (const tc of toolCalls) {
       const result = await executeTool(tc.toolName, tc.args);
@@ -162,6 +164,7 @@ export async function runAgent(
           },
         ],
       });
+      reportTokenUsage();
     }
   }
 
