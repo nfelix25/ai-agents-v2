@@ -8,7 +8,14 @@ import { filterCompatibleMessages } from './system/filterMessages.ts';
 
 import type { AgentCallbacks, ToolCallInfo } from '../types.ts';
 import { executeTool } from './executeTool.ts';
-import { open } from 'fs';
+import {
+  estimateMessagesTokens,
+  getModelLimits,
+  isOverThreshold,
+  calculateUsagePercentage,
+  compactConversation,
+  DEFAULT_THRESHOLD,
+} from './context/index.ts';
 
 const MODEL_NAME = 'gpt-5-mini';
 
@@ -19,9 +26,20 @@ export async function runAgent(
   conversationHistory: ModelMessage[],
   callbacks: AgentCallbacks,
 ): Promise<ModelMessage[]> {
-  // Filter and check if we need to compact the conversation history before starting
+  const modelLimits = getModelLimits(MODEL_NAME);
 
-  const workingHistory = filterCompatibleMessages(conversationHistory);
+  // Filter and check if we need to compact the conversation history before starting
+  let workingHistory = filterCompatibleMessages(conversationHistory);
+  const preCheckTokens = estimateMessagesTokens([
+    { role: 'system', content: SYSTEM_PROMPT },
+    ...workingHistory,
+    { role: 'user', content: userMessage },
+  ]);
+
+  if (isOverThreshold(preCheckTokens.total, modelLimits.contextWindow)) {
+    // Compact the conversation
+    workingHistory = await compactConversation(workingHistory, MODEL_NAME);
+  }
 
   const messages: ModelMessage[] = [
     { role: 'system', content: SYSTEM_PROMPT },
@@ -43,6 +61,26 @@ export async function runAgent(
       //   },
       // },
     });
+
+    const reportTokenUsage = () => {
+      if (callbacks.onTokenUsage) {
+        const usage = estimateMessagesTokens(messages);
+
+        callbacks.onTokenUsage({
+          inputTokens: usage.input,
+          outputTokens: usage.output,
+          totalTokens: usage.total,
+          contextWindow: modelLimits.contextWindow,
+          threshold: DEFAULT_THRESHOLD,
+          percentage: calculateUsagePercentage(
+            usage.total,
+            modelLimits.contextWindow,
+          ),
+        });
+      }
+    };
+
+    reportTokenUsage();
 
     const toolCalls: ToolCallInfo[] = [];
     let currentText = '';
