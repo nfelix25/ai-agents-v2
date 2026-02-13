@@ -7,6 +7,8 @@ import type {
   SingleTurnResult,
   MultiTurnTarget,
   MultiTurnResult,
+  CompactionResult,
+  CompactionTarget,
 } from './types.ts';
 
 const judgeSchema = z.object({
@@ -150,4 +152,134 @@ export function toolSelectionScore(
   // Simple F1-ish score
   if (precision + recall === 0) return 0;
   return (2 * precision * recall) / (precision + recall);
+}
+
+export async function compactionQualityJudge(
+  output: CompactionResult,
+  target: CompactionTarget,
+): Promise<number> {
+  const { object } = await generateObject({
+    model: openai('gpt-5.1'),
+    providerOptions: { openai: { reasoningEffort: 'high' } },
+    system: `You are evaluating conversation summarization 
+  quality.
+
+  Score from 1-10 based on:
+  1. **Information Preservation** (40%): Are all critical details 
+  from mustPreserve preserved?
+  2. **Clarity** (20%): Is the summary clear and coherent?
+  3. **Completeness** (20%): Can someone continue the task from this
+   summary alone?
+  4. **Conciseness** (20%): Is it appropriately compressed without 
+  over-summarizing?
+
+  Return JSON with:
+  - score: number (1-10)
+  - reason: string (explain the score)
+  - missingInfo: array of critical info that was lost
+  - wellPreserved: array of critical info that was well preserved`,
+    prompt: `
+  ## Original Conversation Stats
+  - Messages: ${output.originalLength}
+  - Tokens: ${output.originalTokens}
+
+  ## Compacted Summary Stats
+  - Messages: ${output.compactedLength}
+  - Tokens: ${output.compactedTokens}
+  - Compression Ratio: ${(output.compressionRatio * 100).toFixed(1)}%
+  - Strategy: ${output.strategy}
+
+  ## CRITICAL INFORMATION THAT MUST BE PRESERVED
+
+  ### Must Preserve (critical facts):
+  ${output.criticalInfo.mustPreserve
+    .map(
+      (item, i) => `${i + 1}. 
+  ${item}`,
+    )
+    .join('\n')}
+
+  ### Task Context:
+  ${output.criticalInfo.taskContext}
+
+  ### Key Decisions:
+  ${output.criticalInfo.keyDecisions
+    .map(
+      (item, i) => `${i + 1}. 
+  ${item}`,
+    )
+    .join('\n')}
+
+  ### User Preferences:
+  ${output.criticalInfo.userPreferences
+    .map(
+      (item, i) => `${i + 1}. 
+  ${item}`,
+    )
+    .join('\n')}
+
+  ${
+    output.criticalInfo.technicalConstraints ?
+      `### Technical Constr
+  aints:\n${output.criticalInfo.technicalConstraints
+    .map((item, i) => `${i + 1}. ${item}`)
+    .join('\n')}`
+    : ''
+  }
+
+  ${
+    output.criticalInfo.rejectedOptions ?
+      `### Rejected Options 
+  (should be 
+  mentioned):\n${output.criticalInfo.rejectedOptions
+    .map((item, i) => `${i + 1}. ${item}`)
+    .join('\n')}`
+    : ''
+  }
+
+  ## COMPACTED SUMMARY TO EVALUATE
+
+  ${output.compactedText}
+
+  ---
+
+  **Task:** Evaluate how well this summary preserves the critical 
+  information listed above.`,
+    schema: z.object({
+      score: z
+        .number()
+        .min(1)
+        .max(10)
+        .describe('Score from 1-10 where 10 is perfect'),
+      reason: z.string().describe('Brief explanation for the score'),
+      missingInfo: z
+        .array(z.string())
+        .describe('List of critical info items that were lost in the summary'),
+      wellPreserved: z
+        .array(z.string())
+        .describe(
+          'List of critical info items that were well preserved in the summary',
+        ),
+    }),
+  });
+
+  return object.score / 10; // Normalize to 0-1 range
+}
+
+export function compressionRatioScore(
+  output: CompactionResult,
+  _target: CompactionTarget,
+): number {
+  // Score based on compression ratio
+  // Good: 0.5-0.8 (50-80% reduction)
+  // Too little: <0.3 (not compacting enough)
+  // Too much: >0.9 (might lose info)
+
+  const ratio = output.compressionRatio;
+
+  if (ratio >= 0.5 && ratio <= 0.8) return 1; // Ideal
+  if (ratio >= 0.3 && ratio < 0.5) return 0.7; // Could compact more
+  if (ratio > 0.8 && ratio <= 0.9) return 0.8; // Heavy compression
+  if (ratio > 0.9) return 0.5; // Too much compression
+  return 0.3; // Not compacted enough
 }
