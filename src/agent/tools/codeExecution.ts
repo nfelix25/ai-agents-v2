@@ -11,7 +11,7 @@ import shell from 'shelljs';
  * vs letting the model separate tools (writeFile + runCommand)
  */
 
-export const executeTool = tool({
+export const executeCode = tool({
   description:
     'Execute code for anything you need compute for. Supports JavaScript (Node.js), Python, and TypeScript. Returns the output of the execution.',
   inputSchema: z.object({
