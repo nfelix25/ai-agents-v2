@@ -28,6 +28,10 @@ export const fileTools = {
   deleteFile,
 };
 
+export const shellTools = {
+  runCommand,
+};
+
 export const codeTools = {
   executeCode,
 };
