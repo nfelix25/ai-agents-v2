@@ -71,6 +71,16 @@ export const executeTool = tool({
       }
 
       return output || 'Code executed successfully (no output).';
-    } catch (error) {}
+    } catch (error) {
+      const err = error as Error;
+      return `Error executing code: ${err.message}`;
+    } finally {
+      // Clean up temp file
+      try {
+        await fs.unlink(tmpFile);
+      } catch {
+        // Ignore errors during cleanup
+      }
+    }
   },
 });
